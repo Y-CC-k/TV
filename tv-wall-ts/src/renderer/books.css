@@ -3,7 +3,9 @@
    版面：中間一張書籍卡片（封面圖＋書名），左右有翻頁按鈕，底部圓點指示器
    ========================================================================== */
 
-.books-page {
+.books-page,
+.campus-page,
+.health-page {
   position: relative;
   display: flex;
   flex-direction: column;
