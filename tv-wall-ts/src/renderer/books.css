@@ -139,32 +139,32 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 26px;           /* 小卡與小卡之間的間隔加大 */
-  padding: 16px;       /* 與書卡的外框間距加大 */
+  gap: 18px;           /* 4 張小卡的間隔 */
+  padding: 16px;       /* 與書卡的外框間距 */
   opacity: 0.92;
 }
 
 .book-sidebar-list {
   display: flex;
   flex-direction: column;
-  gap: 18px;           /* 小卡之間間隔加大 */
+  gap: 12px;           /* 小卡之間間隔 */
   align-items: center;
 }
 
 .book-sidebar-item {
-  width: 132px;        /* 小卡整體更大 */
-  height: 160px;
+  width: 120px;        /* 小卡整體 */
+  height: 148px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   cursor: pointer;
   user-select: none;
 }
 
 .book-sidebar-item img {
-  width: 110px;        /* 縮圖放大 */
-  height: 140px;
+  width: 100px;        /* 縮圖 */
+  height: 128px;
   border-radius: 10px;
   object-fit: cover;
   background: #000;

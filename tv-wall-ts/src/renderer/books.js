@@ -111,18 +111,24 @@
   }
 
   function sidebarSix() {
-    /* 六個小方塊：不重複；圖案不足時只顯示現有本數（不重複填補） */
+    /* 4+4 小卡：不足時循環重複填滿 */
     if (items.length === 0) return [];
-    var take = Math.min(6, items.length);
+    var take = Math.min(4, items.length);
     var start = items.length - take;
-    return items.slice(start).map(function (it, i) { return { item: it, idx: start + i }; });
+    var base = items.slice(start).map(function (it, i) { return { item: it, idx: start + i }; });
+    var out = [];
+    while (out.length < 8 && base.length > 0) {
+      var e = base[out.length % base.length];
+      out.push({ item: e.item, idx: e.idx });
+    }
+    return out;
   }
 
   function renderSidebar() {
     if (!bound) return;
     var six = sidebarSix();
-    var left = six.slice(0, 3);
-    var right = six.slice(3, 6);
+    var left = six.slice(0, 4);
+    var right = six.slice(4, 8);
     [ { root: els.sidebarStart, list: left }, { root: els.sidebarEnd, list: right } ].forEach(function (g) {
       if (!g.root) return;
       g.root.innerHTML = "";
