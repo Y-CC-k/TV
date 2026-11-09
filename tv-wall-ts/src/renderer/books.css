@@ -55,11 +55,11 @@
   max-height: 88vh;
 }
 
-/* 衛教宣導 / 校園風雲：寬螢幕 70% x 95% */
+/* 衛教宣導 / 校園風雲：寬螢幕 70% x 90% */
 #healthPage .book-card,
 #campusPage .book-card {
   width: 70%;
-  height: 95%;
+  height: 90%;
   max-width: 92vw;
   max-height: 88vh;
 }
