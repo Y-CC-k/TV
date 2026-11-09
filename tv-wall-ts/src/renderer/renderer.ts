@@ -13,6 +13,7 @@
   const root = $("root");
   const video = $<HTMLVideoElement>("video");
   const image = $<HTMLImageElement>("image");
+  const image2 = $<HTMLImageElement>("image2");
   const videoMsg = $("videoMsg");
   const imageMsg = $("imageMsg");
   const tabBar = $("tabBar");
@@ -211,11 +212,13 @@
   function showImage(): void {
     if (images.length === 0) {
       image.removeAttribute("src");
+      image2.removeAttribute("src");
       setMsg(imageMsg, "images 資料夾沒有圖片");
       return;
     }
     setMsg(imageMsg, null);
     image.src = images[iIdx].url;
+    image2.src = images[(iIdx + 1) % images.length].url;
   }
 
   function stopTimer(): void {
@@ -350,6 +353,7 @@
     interval = cfg.imageIntervalMs;
     video.style.objectFit = cfg.videoFit;
     image.style.objectFit = cfg.imageFit;
+    image2.style.objectFit = cfg.imageFit;
 
     /* 顯示公告機 IP（右上角），供用戶端輸入 */
     if (serverIpDisplay) {

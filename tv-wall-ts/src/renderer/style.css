@@ -120,6 +120,24 @@ body {
   flex-direction: row;
 }
 
+/* 橫向（寬螢幕）：影片全幅播放，不切左右、不變形 */
+#root.landscape #videoPane {
+  flex: 1 1 0;
+}
+#root.landscape #imagePane,
+#root.landscape #imagePane2 {
+  display: none;
+}
+
+/* 直立（高螢幕）：54% 高度播放影片，其餘 46% 切成上下兩塊播放相片 */
+#root.portrait #videoPane {
+  flex: 0 0 54%;
+}
+#root.portrait #imagePane,
+#root.portrait #imagePane2 {
+  flex: 1 1 0;
+}
+
 .pane {
   position: relative;
   flex: 1 1 0;
@@ -142,6 +160,10 @@ body {
 
 #image {
   object-fit: fill; /* 圖片：變形填滿窗格（預設值，依 config.json 覆寫） */
+}
+
+#image2 {
+  object-fit: fill;
 }
 
 .msg {
