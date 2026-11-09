@@ -33,6 +33,8 @@ interface AppConfig {
   imageIntervalMs: number;
   /** 好書介紹每頁停留毫秒 */
   bookIntervalMs: number;
+  /** 校園風雲每頁停留毫秒 */
+  campusIntervalMs?: number;
   /** 影片填滿窗格的方式 */
   videoFit: FitMode;
   /** 圖片填滿窗格的方式 */
@@ -55,6 +57,8 @@ interface TabVisibility {
   honor?: boolean;
   /** 好書介紹（預設 true） */
   books?: boolean;
+  /** 校園風雲（預設 true） */
+  campus?: boolean;
 }
 
 /** 掃描結果 */
@@ -63,6 +67,8 @@ interface ScanResult {
   images: MediaItem[];
   /** 好書介紹圖片（books 資料夾） */
   books: MediaItem[];
+  /** 校園風雲圖片（campus 資料夾） */
+  campus: MediaItem[];
 }
 
 /** 好書介紹分頁的注入設定（renderer.ts 於 init 時設定） */
@@ -95,6 +101,17 @@ interface Window {
   };
   BOOK_SETTINGS?: BookSettings;
   BooksTab?: {
+    init(settings: BookSettings): void;
+    /** 掃描結果更新（含剛啟動第一次） */
+    setItems(items: MediaItem[]): void;
+    /** 分頁切換 */
+    onShow(): void;
+    onHide(): void;
+    /** 分頁內鍵盤事件（Escape／F11 由 renderer 處理，其餘在此處理） */
+    onKey(e: KeyboardEvent): boolean;
+  };
+  CAMPUS_SETTINGS?: BookSettings;
+  CampusTab?: {
     init(settings: BookSettings): void;
     /** 掃描結果更新（含剛啟動第一次） */
     setItems(items: MediaItem[]): void;

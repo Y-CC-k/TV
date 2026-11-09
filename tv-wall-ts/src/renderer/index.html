@@ -26,6 +26,9 @@
       <button type="button" id="tabBooks" class="tab">
         <span class="tab-ico">📚</span><span>好書介紹</span>
       </button>
+      <button type="button" id="tabCampus" class="tab">
+        <span class="tab-ico">📰</span><span>校園風雲</span>
+      </button>
     </nav>
 
     <!-- ===== 分頁一：電視牆（原本的雙區播放） ===== -->
@@ -155,6 +158,35 @@
       <div id="booksMsg" class="msg books-msg hidden"></div>
     </div>
 
+    <!-- ===== 校園風雲分頁：campus 資料夾圖片輪播 ===== -->
+    <div id="campusPage" class="page campus-page hidden">
+      <main class="books-stage">
+        <button type="button" id="campusPrev" class="book-nav" aria-label="上一則">‹</button>
+        <aside class="book-sidebar book-sidebar--start" data-side="start">
+          <div class="book-sidebar-list" id="campusSidebarStart"></div>
+        </aside>
+        <section class="book-card">
+          <div class="book-cover-wrap">
+            <img id="campusCover" alt="" />
+          </div>
+          <div class="book-info">
+            <span class="book-tag">📰 校園風雲</span>
+            <h2 class="book-title" id="campusTitle"></h2>
+            <div class="book-meta" id="campusCounter"></div>
+          </div>
+        </section>
+        <aside class="book-sidebar book-sidebar--end" data-side="end">
+          <div class="book-sidebar-list" id="campusSidebarEnd"></div>
+        </aside>
+        <button type="button" id="campusNext" class="book-nav" aria-label="下一則">›</button>
+      </main>
+      <footer class="books-footer">
+        <div id="campusDots" class="book-dots"></div>
+      </footer>
+      <div id="campusMsg" class="msg books-msg hidden"></div>
+    </div>
+
+    <script src="campus.js"></script>
     <script src="renderer.js"></script>
     <script src="honor.js"></script>
     <script src="books.js"></script>

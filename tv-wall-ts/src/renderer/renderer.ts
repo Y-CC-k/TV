@@ -19,9 +19,11 @@
   const tabTv = $("tabTv");
   const tabHonor = $("tabHonor");
   const tabBooks = $("tabBooks");
+  const tabCampus = $("tabCampus");
   const tvPage = $("tvPage");
   const honorPage = $("honorPage");
   const booksPage = $("booksPage");
+  const campusPage = $("campusPage");
   const serverIpDisplay = $("serverIp");
 
   let videos: MediaItem[] = [];
@@ -34,18 +36,23 @@
   let autoTabTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** 目前分頁 */
-  let currentTab: "tv" | "honor" | "books" = "tv";
+  let currentTab: "tv" | "honor" | "books" | "campus" = "tv";
 
-  /** 自動切換分頁間隔（1分鐘無操作自動切換，依序 tv → honor → books） */
+  /** 自動切換分頁間隔（1分鐘無操作自動切換，依序 tv → honor → books → campus） */
   const AUTO_TAB_MS = 60000;
-  const TAB_CYCLE: Array<"tv" | "honor" | "books"> = ["tv", "honor", "books"];
+  const TAB_CYCLE: Array<"tv" | "honor" | "books" | "campus"> = ["tv", "honor", "books", "campus"];
 
   /** 分頁顯示設定（false＝隱藏；未填視為顯示） */
-  let tabVisibility: TabVisibility = { tv: true, honor: true, books: true };
+  let tabVisibility: TabVisibility = { tv: true, honor: true, books: true, campus: true };
 
   /** 過濾出目前允許顯示的分頁（依 config tabs 順序 tv → honor → books） */
-  function visibleTabList(): Array<"tv" | "honor" | "books"> {
-    return TAB_CYCLE.filter((k) => (k === "tv" ? tabVisibility.tv !== false : k === "honor" ? tabVisibility.honor !== false : tabVisibility.books !== false));
+  function visibleTabList(): Array<"tv" | "honor" | "books" | "campus"> {
+    return TAB_CYCLE.filter((k) => {
+      if (k === "tv") return tabVisibility.tv !== false;
+      if (k === "honor") return tabVisibility.honor !== false;
+      if (k === "books") return tabVisibility.books !== false;
+      return tabVisibility.campus !== false;
+    });
   }
 
   /** 套用分頁顯示／隱藏設定；目前所在分頁被隱藏時切到第一個可見分頁 */
@@ -54,13 +61,15 @@
       tv: !t || t.tv !== false,
       honor: !t || t.honor !== false,
       books: !t || t.books !== false,
+      campus: !t || t.campus !== false,
     };
     tabTv.classList.toggle("hidden", tabVisibility.tv === false);
     tabHonor.classList.toggle("hidden", tabVisibility.honor === false);
     tabBooks.classList.toggle("hidden", tabVisibility.books === false);
+    tabCampus.classList.toggle("hidden", tabVisibility.campus === false);
     const vis = visibleTabList();
     if (vis.length === 0) {
-      tabTv.classList.remove("hidden"); // 全部取消勾選時保留電視牆避免黑畫面
+      tabTv.classList.remove("hidden");
       tabVisibility.tv = true;
       vis.push("tv");
     }
@@ -96,18 +105,21 @@
   }
 
   /** 切換分頁：離開電視牆時暫停播放，回來時恢復 */
-  function setTab(name: "tv" | "honor" | "books"): void {
+  function setTab(name: "tv" | "honor" | "books" | "campus"): void {
     const prevTab = currentTab;
     currentTab = name;
     document.body.classList.toggle("page-tv", name === "tv");
     document.body.classList.toggle("page-honor", name === "honor");
     document.body.classList.toggle("page-books", name === "books");
+    document.body.classList.toggle("page-campus", name === "campus");
     tvPage.classList.toggle("hidden", name !== "tv");
     honorPage.classList.toggle("hidden", name !== "honor");
     booksPage.classList.toggle("hidden", name !== "books");
+    campusPage.classList.toggle("hidden", name !== "campus");
     tabTv.classList.toggle("active", name === "tv");
     tabHonor.classList.toggle("active", name === "honor");
     tabBooks.classList.toggle("active", name === "books");
+    tabCampus.classList.toggle("active", name === "campus");
     if (name === "tv") {
       updateLayout();
       if (videos.length > 0 && !paused) void video.play().catch(() => undefined);
@@ -119,13 +131,16 @@
     if (prevTab === "tv" && name !== "tv") window.HonorTab?.onHide?.();
     if (name === "honor") window.HonorTab?.onShow?.();
     if (name === "books") window.BooksTab?.onShow?.();
+    if (name === "campus") window.CampusTab?.onShow?.();
     if (name !== "books" && prevTab === "books") window.BooksTab?.onHide?.();
+    if (name !== "campus" && prevTab === "campus") window.CampusTab?.onHide?.();
     resetAutoTabTimer();
   }
 
   tabTv.addEventListener("click", () => setTab("tv"));
   tabHonor.addEventListener("click", () => setTab("honor"));
   tabBooks.addEventListener("click", () => setTab("books"));
+  tabCampus.addEventListener("click", () => setTab("campus"));
 
   /** 直立＝上下各半、橫向＝左右各半（同原 Python 版） */
   function updateLayout(): void {
@@ -250,6 +265,8 @@
     showImage();
     /* 好書介紹分頁：清單更新（不在該分頁時也只是更新內部狀態） */
     window.BooksTab?.setItems(result.books ?? []);
+    /* 校園風雲分頁：清單更新 */
+    window.CampusTab?.setItems(result.campus ?? []);
     if (paused) {
       video.pause();
       stopTimer();
@@ -345,6 +362,13 @@
     window.BOOK_SETTINGS = bookSettings;
     window.BooksTab?.init?.(bookSettings);
 
+    /* 校園風雲分頁設定注入（campus 資料夾清單由 rescan 給 CampusTab.setItems） */
+    const campusSettings: BookSettings = {
+      intervalMs: (cfg as Partial<AppConfig> & { campusIntervalMs?: number }).campusIntervalMs ?? cfg.bookIntervalMs,
+    };
+    window.CAMPUS_SETTINGS = campusSettings;
+    window.CampusTab?.init?.(campusSettings);
+
     /* 套用分頁顯示／隱藏設定（config.json 的 tabs 區塊） */
     const bootTabs = (cfg as Partial<AppConfig> & { tabs?: TabVisibility }).tabs;
     applyTabs(bootTabs);
@@ -352,7 +376,7 @@
     /* 預設分頁：只選目前允許顯示的分頁 */
     const vis = visibleTabList();
     const wantHonor = hasHonor && (cfg as Partial<AppConfig> & { defaultTab?: string }).defaultTab === "honor";
-    let startTab: "tv" | "honor" | "books" = "tv";
+    let startTab: "tv" | "honor" | "books" | "campus" = "tv";
     if (wantHonor && vis.includes("honor")) startTab = "honor";
     else if (vis.length > 0 && !vis.includes("tv")) startTab = vis[0];
     setTab(startTab);

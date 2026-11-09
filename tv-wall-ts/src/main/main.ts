@@ -76,8 +76,12 @@ interface FileConfig {
   imagesDir?: string;
   /** 好書介紹（books 分頁）圖片資料夾 */
   booksDir?: string;
+  /** 校園風雲（campus 分頁）圖片資料夾 */
+  campusDir?: string;
   /** 好書介紹每頁停留毫秒 */
   bookIntervalMs?: number;
+  /** 校園風雲每頁停留毫秒 */
+  campusIntervalMs?: number;
   imageIntervalMs?: number;
   videoFit?: FitMode;
   imageFit?: FitMode;
@@ -98,6 +102,7 @@ interface ResolvedConfig extends AppConfig {
   videoDir: string;
   imagesDir: string;
   booksDir: string;
+  campusDir: string;
   serverMode: boolean;
   serverPort: number;
   /** 實際讀到的 config.json 完整路徑（找不到檔案時為空字串） */
@@ -138,12 +143,14 @@ function resolveConfig(): ResolvedConfig {
   const videoDir = dir(raw.videoDir, "video");
   const imagesDir = dir(raw.imagesDir, "images");
   const booksDir = dir(raw.booksDir, "books");
+  const campusDir = dir(raw.campusDir, "campus");
 
   return {
     configPath: readPath,
     videoDir,
     imagesDir,
     booksDir,
+    campusDir,
     imageIntervalMs:
       typeof raw.imageIntervalMs === "number" && raw.imageIntervalMs > 0
         ? raw.imageIntervalMs
@@ -151,6 +158,10 @@ function resolveConfig(): ResolvedConfig {
     bookIntervalMs:
       typeof raw.bookIntervalMs === "number" && raw.bookIntervalMs > 0
         ? raw.bookIntervalMs
+        : 8000,
+    campusIntervalMs:
+      typeof raw.campusIntervalMs === "number" && raw.campusIntervalMs > 0
+        ? raw.campusIntervalMs
         : 8000,
     videoFit: raw.videoFit ?? "contain",
     imageFit: raw.imageFit ?? "fill",
@@ -164,8 +175,9 @@ function resolveConfig(): ResolvedConfig {
             tv: raw.tabs.tv !== false,
             honor: raw.tabs.honor !== false,
             books: raw.tabs.books !== false,
+            campus: raw.tabs.campus !== false,
           }
-        : { tv: true, honor: true, books: true },
+        : { tv: true, honor: true, books: true, campus: true },
     honor:
       raw.honor && typeof raw.honor === "object"
         ? {
@@ -194,6 +206,7 @@ function publicConfig(c: ResolvedConfig): AppConfig {
   return {
     imageIntervalMs: c.imageIntervalMs,
     bookIntervalMs: c.bookIntervalMs,
+    campusIntervalMs: c.campusIntervalMs,
     videoFit: c.videoFit,
     imageFit: c.imageFit,
     defaultTab: c.defaultTab,
@@ -266,6 +279,7 @@ function setupIpc(): void {
       fs.mkdirSync(cfg.videoDir, { recursive: true });
       fs.mkdirSync(cfg.imagesDir, { recursive: true });
       fs.mkdirSync(cfg.booksDir, { recursive: true });
+      fs.mkdirSync(cfg.campusDir, { recursive: true });
     } catch {
       // 無法建立資料夾就視為不存在，交給 collect 回傳空陣列
     }
@@ -273,6 +287,7 @@ function setupIpc(): void {
       videos: collect(cfg.videoDir, VIDEO_EXTS),
       images: collect(cfg.imagesDir, IMAGE_EXTS),
       books: collect(cfg.booksDir, IMAGE_EXTS),
+      campus: collect(cfg.campusDir, IMAGE_EXTS),
     } as ScanResult;
   });
 
@@ -385,6 +400,7 @@ if (!gotLock) {
         videoDir: bootCfg.videoDir,
         imagesDir: bootCfg.imagesDir,
         booksDir: bootCfg.booksDir,
+        campusDir: bootCfg.campusDir,
         port: bootCfg.serverPort,
         configPath: bootCfg.configPath,
         onUploaded: () => {
