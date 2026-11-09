@@ -93,7 +93,7 @@ npm run dist    # 封包 NSIS 安裝程式
   "tabs": { "tv": true, "honor": true, "books": true },
   "honor": {
     "supabaseUrl": "https://xxxx.supabase.co",
-    "publishableKey": "sb_publishable_...",
+    "publishableKey": "sb_publishable_hxv***Myh",
     "topN": 10
   }
 }
