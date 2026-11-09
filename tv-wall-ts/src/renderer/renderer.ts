@@ -15,6 +15,7 @@
   const image = $<HTMLImageElement>("image");
   const image2 = $<HTMLImageElement>("image2");
   const image3 = $<HTMLImageElement>("image3");
+  const image4 = $<HTMLImageElement>("image4");
   const videoMsg = $("videoMsg");
   const imageMsg = $("imageMsg");
   const tabBar = $("tabBar");
@@ -215,6 +216,7 @@
       image.removeAttribute("src");
       image2.removeAttribute("src");
       image3.removeAttribute("src");
+      image4.removeAttribute("src");
       setMsg(imageMsg, "images 資料夾沒有圖片");
       return;
     }
@@ -222,6 +224,7 @@
     image.src = images[iIdx].url;
     image2.src = images[(iIdx + 1) % images.length].url;
     image3.src = images[(iIdx + 2) % images.length].url;
+    image4.src = images[(iIdx + 3) % images.length].url;
   }
 
   function stopTimer(): void {
@@ -358,6 +361,7 @@
     image.style.objectFit = cfg.imageFit;
     image2.style.objectFit = cfg.imageFit;
     image3.style.objectFit = cfg.imageFit;
+    image4.style.objectFit = cfg.imageFit;
 
     /* 顯示公告機 IP（右上角），供用戶端輸入 */
     if (serverIpDisplay) {

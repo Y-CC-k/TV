@@ -126,17 +126,19 @@ body {
 }
 #root.landscape #imagePane,
 #root.landscape #imagePane2,
-#root.landscape #imagePane3 {
+#root.landscape #imagePane3,
+#root.landscape #imagePane4 {
   display: none;
 }
 
-/* 直立（高螢幕）：40% 高度播放影片，其餘 60% 切成上下三塊播放相片 */
+/* 直立（高螢幕）：30% 高度播放影片，其餘 70% 切成上下四塊播放相片 */
 #root.portrait #videoPane {
-  flex: 0 0 40%;
+  flex: 0 0 30%;
 }
 #root.portrait #imagePane,
 #root.portrait #imagePane2,
-#root.portrait #imagePane3 {
+#root.portrait #imagePane3,
+#root.portrait #imagePane4 {
   flex: 1 1 0;
 }
 
@@ -169,6 +171,10 @@ body {
 }
 
 #image3 {
+  object-fit: fill;
+}
+
+#image4 {
   object-fit: fill;
 }
 
