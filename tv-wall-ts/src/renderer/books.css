@@ -53,6 +53,16 @@
     height: 90%;            /* 寬螢幕：高度 90% */
   max-width: 92vw;
   max-height: 88vh;
+}
+
+/* 衛教宣導 / 校園風雲：寬螢幕 70% x 95% */
+#healthPage .book-card,
+#campusPage .book-card {
+  width: 70%;
+  height: 95%;
+  max-width: 92vw;
+  max-height: 88vh;
+}
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -201,6 +211,14 @@
     gap: 32px;
   }
   .book-card {
+    width: 95%;
+    height: 80%;
+    max-width: 92vw;
+    max-height: 88vh;
+  }
+  /* 衛教宣導 / 校園風雲：直向 95% x 80% */
+  #healthPage .book-card,
+  #campusPage .book-card {
     width: 95%;
     height: 80%;
     max-width: 92vw;
