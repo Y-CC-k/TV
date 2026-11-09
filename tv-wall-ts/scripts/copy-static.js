@@ -8,7 +8,7 @@ const dest = path.join(root, "dist", "renderer");
 
 fs.mkdirSync(dest, { recursive: true });
 // index.html 引用的靜態資產（CSS／JS）
-for (const file of ["index.html", "style.css", "honor.css", "books.css", "renderer.js", "honor.js", "books.js", "campus.js"]) {
+for (const file of ["index.html", "style.css", "honor.css", "books.css", "renderer.js", "honor.js", "books.js", "campus.js", "health.js"]) {
   const from = path.join(src, file);
   if (fs.existsSync(from)) fs.copyFileSync(from, path.join(dest, file));
 }

@@ -78,10 +78,14 @@ interface FileConfig {
   booksDir?: string;
   /** 校園風雲（campus 分頁）圖片資料夾 */
   campusDir?: string;
+  /** 衛教宣導（health 分頁）圖片資料夾 */
+  healthDir?: string;
   /** 好書介紹每頁停留毫秒 */
   bookIntervalMs?: number;
   /** 校園風雲每頁停留毫秒 */
   campusIntervalMs?: number;
+  /** 衛教宣導每頁停留毫秒 */
+  healthIntervalMs?: number;
   imageIntervalMs?: number;
   videoFit?: FitMode;
   imageFit?: FitMode;
@@ -103,6 +107,7 @@ interface ResolvedConfig extends AppConfig {
   imagesDir: string;
   booksDir: string;
   campusDir: string;
+  healthDir: string;
   serverMode: boolean;
   serverPort: number;
   /** 實際讀到的 config.json 完整路徑（找不到檔案時為空字串） */
@@ -144,6 +149,7 @@ function resolveConfig(): ResolvedConfig {
   const imagesDir = dir(raw.imagesDir, "images");
   const booksDir = dir(raw.booksDir, "books");
   const campusDir = dir(raw.campusDir, "campus");
+  const healthDir = dir(raw.healthDir, "health");
 
   return {
     configPath: readPath,
@@ -151,6 +157,7 @@ function resolveConfig(): ResolvedConfig {
     imagesDir,
     booksDir,
     campusDir,
+    healthDir,
     imageIntervalMs:
       typeof raw.imageIntervalMs === "number" && raw.imageIntervalMs > 0
         ? raw.imageIntervalMs
@@ -162,6 +169,10 @@ function resolveConfig(): ResolvedConfig {
     campusIntervalMs:
       typeof raw.campusIntervalMs === "number" && raw.campusIntervalMs > 0
         ? raw.campusIntervalMs
+        : 8000,
+    healthIntervalMs:
+      typeof raw.healthIntervalMs === "number" && raw.healthIntervalMs > 0
+        ? raw.healthIntervalMs
         : 8000,
     videoFit: raw.videoFit ?? "contain",
     imageFit: raw.imageFit ?? "fill",
@@ -176,8 +187,9 @@ function resolveConfig(): ResolvedConfig {
             honor: raw.tabs.honor !== false,
             books: raw.tabs.books !== false,
             campus: raw.tabs.campus !== false,
+            health: raw.tabs.health !== false,
           }
-        : { tv: true, honor: true, books: true, campus: true },
+        : { tv: true, honor: true, books: true, campus: true, health: true },
     honor:
       raw.honor && typeof raw.honor === "object"
         ? {
@@ -207,6 +219,7 @@ function publicConfig(c: ResolvedConfig): AppConfig {
     imageIntervalMs: c.imageIntervalMs,
     bookIntervalMs: c.bookIntervalMs,
     campusIntervalMs: c.campusIntervalMs,
+    healthIntervalMs: c.healthIntervalMs,
     videoFit: c.videoFit,
     imageFit: c.imageFit,
     defaultTab: c.defaultTab,
@@ -280,6 +293,7 @@ function setupIpc(): void {
       fs.mkdirSync(cfg.imagesDir, { recursive: true });
       fs.mkdirSync(cfg.booksDir, { recursive: true });
       fs.mkdirSync(cfg.campusDir, { recursive: true });
+      fs.mkdirSync(cfg.healthDir, { recursive: true });
     } catch {
       // 無法建立資料夾就視為不存在，交給 collect 回傳空陣列
     }
@@ -288,6 +302,7 @@ function setupIpc(): void {
       images: collect(cfg.imagesDir, IMAGE_EXTS),
       books: collect(cfg.booksDir, IMAGE_EXTS),
       campus: collect(cfg.campusDir, IMAGE_EXTS),
+      health: collect(cfg.healthDir, IMAGE_EXTS),
     } as ScanResult;
   });
 
@@ -401,6 +416,7 @@ if (!gotLock) {
         imagesDir: bootCfg.imagesDir,
         booksDir: bootCfg.booksDir,
         campusDir: bootCfg.campusDir,
+        healthDir: bootCfg.healthDir,
         port: bootCfg.serverPort,
         configPath: bootCfg.configPath,
         onUploaded: () => {
@@ -430,12 +446,14 @@ if (!gotLock) {
                 tv: raw.tabs ? raw.tabs.tv !== false : true,
                 honor: raw.tabs ? raw.tabs.honor !== false : true,
                 books: raw.tabs ? raw.tabs.books !== false : true,
+                campus: raw.tabs ? raw.tabs.campus !== false : true,
+                health: raw.tabs ? raw.tabs.health !== false : true,
               };
               if (win && !win.isDestroyed()) {
                 win.webContents.send("config-updated", { tabs, defaultTab: raw.defaultTab === "honor" ? "honor" : "tv" });
               }
             } catch {
-              /* 解析失敗：略過 */
+              /* 讀取失敗：略過 */
             }
           }, 400);
         });

@@ -77,6 +77,7 @@
   const tabChkHonor = $("tabChkHonor");
   const tabChkBooks = $("tabChkBooks");
   const tabChkCampus = $("tabChkCampus");
+  const tabChkHealth = $("tabChkHealth");
   const btnLoadTabs = $("btnLoadTabs");
   const btnApplyTabs = $("btnApplyTabs");
   const tabApplyMsg = $("tabApplyMsg");
@@ -479,6 +480,7 @@
       tabChkHonor.checked = tabs.honor !== false;
       tabChkBooks.checked = tabs.books !== false;
       tabChkCampus.checked = tabs.campus !== false;
+      tabChkHealth.checked = tabs.health !== false;
       tabApplyStatus("已讀取", false);
     } catch (err) {
       tabApplyStatus("讀取失敗：" + err.message, true);
@@ -499,8 +501,9 @@
       honor: tabChkHonor.checked,
       books: tabChkBooks.checked,
       campus: tabChkCampus.checked,
+      health: tabChkHealth.checked,
     };
-      /* Content-Type 用 text/plain 以避開跨來源預檢請求（伺服器只解析 JSON 內容） */
+    /* Content-Type 用 text/plain 以避開跨來源預檢請求（伺服器只解析 JSON 內容） */
     try {
       const res = await fetch(`${t.base}/config`, {
         method: "POST",
@@ -882,7 +885,8 @@
       const images = data.images || [];
       const books = data.books || [];
        const campus = data.campus || [];
-       const allFiles = [...videos, ...images, ...books, ...campus];
+       const health = data.health || [];
+       const allFiles = [...videos, ...images, ...books, ...campus, ...health];
 
       filesList.innerHTML = "";
       filesListCount.textContent = allFiles.length + " 個檔案";
@@ -894,7 +898,7 @@
 
       allFiles.sort((a, b) => {
         if (a.type !== b.type) {
-           const order = { video: 0, image: 1, book: 2, campus: 3 };
+           const order = { video: 0, image: 1, book: 2, campus: 3, health: 4 };
           return (order[a.type] ?? 9) - (order[b.type] ?? 9);
         }
         return a.name.localeCompare(b.name);
@@ -903,7 +907,7 @@
       for (const f of allFiles) {
         const div = document.createElement("div");
         div.className = "file-item";
-           const typeLabel = f.type === "video" ? "🎬" : f.type === "book" ? "📘" : f.type === "campus" ? "📰" : "🖼";
+           const typeLabel = f.type === "video" ? "🎬" : f.type === "book" ? "📘" : f.type === "campus" ? "📰" : f.type === "health" ? "🏥" : "🖼";
         div.innerHTML = `
           <div>
             <span class="file-name">${typeLabel} ${esc(f.name)}</span>
@@ -921,7 +925,7 @@
           const type = btn.getAttribute("data-type");
           const name = btn.getAttribute("data-name");
           if (!(await confirmMsg(`確定要刪除 ${name} 嗎？`))) return;
-           const delType = type === "video" ? "videos" : type === "book" ? "books" : type === "campus" ? "campus" : "images";
+           const delType = type === "video" ? "videos" : type === "book" ? "books" : type === "campus" ? "campus" : type === "health" ? "health" : "images";
           try {
             const delRes = await fetch(`${currentBaseUrl}/files/${delType}/${encodeURIComponent(name)}`, {
               method: "DELETE",

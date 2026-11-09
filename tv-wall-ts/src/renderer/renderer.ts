@@ -20,10 +20,12 @@
   const tabHonor = $("tabHonor");
   const tabBooks = $("tabBooks");
   const tabCampus = $("tabCampus");
+  const tabHealth = $("tabHealth");
   const tvPage = $("tvPage");
   const honorPage = $("honorPage");
   const booksPage = $("booksPage");
   const campusPage = $("campusPage");
+  const healthPage = $("healthPage");
   const serverIpDisplay = $("serverIp");
 
   let videos: MediaItem[] = [];
@@ -36,22 +38,23 @@
   let autoTabTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** 目前分頁 */
-  let currentTab: "tv" | "honor" | "books" | "campus" = "tv";
+  let currentTab: "tv" | "honor" | "books" | "campus" | "health" = "tv";
 
-  /** 自動切換分頁間隔（1分鐘無操作自動切換，依序 tv → honor → books → campus） */
+  /** 自動切換分頁間隔（1分鐘無操作自動切換，依序 tv → honor → books → campus → health） */
   const AUTO_TAB_MS = 60000;
-  const TAB_CYCLE: Array<"tv" | "honor" | "books" | "campus"> = ["tv", "honor", "books", "campus"];
+  const TAB_CYCLE: Array<"tv" | "honor" | "books" | "campus" | "health"> = ["tv", "honor", "books", "campus", "health"];
 
   /** 分頁顯示設定（false＝隱藏；未填視為顯示） */
-  let tabVisibility: TabVisibility = { tv: true, honor: true, books: true, campus: true };
+  let tabVisibility: TabVisibility = { tv: true, honor: true, books: true, campus: true, health: true };
 
   /** 過濾出目前允許顯示的分頁（依 config tabs 順序 tv → honor → books） */
-  function visibleTabList(): Array<"tv" | "honor" | "books" | "campus"> {
+  function visibleTabList(): Array<"tv" | "honor" | "books" | "campus" | "health"> {
     return TAB_CYCLE.filter((k) => {
       if (k === "tv") return tabVisibility.tv !== false;
       if (k === "honor") return tabVisibility.honor !== false;
       if (k === "books") return tabVisibility.books !== false;
-      return tabVisibility.campus !== false;
+      if (k === "campus") return tabVisibility.campus !== false;
+      return tabVisibility.health !== false;
     });
   }
 
@@ -62,11 +65,13 @@
       honor: !t || t.honor !== false,
       books: !t || t.books !== false,
       campus: !t || t.campus !== false,
+      health: !t || t.health !== false,
     };
     tabTv.classList.toggle("hidden", tabVisibility.tv === false);
     tabHonor.classList.toggle("hidden", tabVisibility.honor === false);
     tabBooks.classList.toggle("hidden", tabVisibility.books === false);
     tabCampus.classList.toggle("hidden", tabVisibility.campus === false);
+    tabHealth.classList.toggle("hidden", tabVisibility.health === false);
     const vis = visibleTabList();
     if (vis.length === 0) {
       tabTv.classList.remove("hidden");
@@ -105,21 +110,24 @@
   }
 
   /** 切換分頁：離開電視牆時暫停播放，回來時恢復 */
-  function setTab(name: "tv" | "honor" | "books" | "campus"): void {
+  function setTab(name: "tv" | "honor" | "books" | "campus" | "health"): void {
     const prevTab = currentTab;
     currentTab = name;
     document.body.classList.toggle("page-tv", name === "tv");
     document.body.classList.toggle("page-honor", name === "honor");
     document.body.classList.toggle("page-books", name === "books");
     document.body.classList.toggle("page-campus", name === "campus");
+    document.body.classList.toggle("page-health", name === "health");
     tvPage.classList.toggle("hidden", name !== "tv");
     honorPage.classList.toggle("hidden", name !== "honor");
     booksPage.classList.toggle("hidden", name !== "books");
     campusPage.classList.toggle("hidden", name !== "campus");
+    healthPage.classList.toggle("hidden", name !== "health");
     tabTv.classList.toggle("active", name === "tv");
     tabHonor.classList.toggle("active", name === "honor");
     tabBooks.classList.toggle("active", name === "books");
     tabCampus.classList.toggle("active", name === "campus");
+    tabHealth.classList.toggle("active", name === "health");
     if (name === "tv") {
       updateLayout();
       if (videos.length > 0 && !paused) void video.play().catch(() => undefined);
@@ -132,8 +140,10 @@
     if (name === "honor") window.HonorTab?.onShow?.();
     if (name === "books") window.BooksTab?.onShow?.();
     if (name === "campus") window.CampusTab?.onShow?.();
+    if (name === "health") window.HealthTab?.onShow?.();
     if (name !== "books" && prevTab === "books") window.BooksTab?.onHide?.();
     if (name !== "campus" && prevTab === "campus") window.CampusTab?.onHide?.();
+    if (name !== "health" && prevTab === "health") window.HealthTab?.onHide?.();
     resetAutoTabTimer();
   }
 
@@ -141,6 +151,7 @@
   tabHonor.addEventListener("click", () => setTab("honor"));
   tabBooks.addEventListener("click", () => setTab("books"));
   tabCampus.addEventListener("click", () => setTab("campus"));
+  tabHealth.addEventListener("click", () => setTab("health"));
 
   /** 直立＝上下各半、橫向＝左右各半（同原 Python 版） */
   function updateLayout(): void {
@@ -267,6 +278,8 @@
     window.BooksTab?.setItems(result.books ?? []);
     /* 校園風雲分頁：清單更新 */
     window.CampusTab?.setItems(result.campus ?? []);
+    /* 衛教宣導分頁：清單更新 */
+    window.HealthTab?.setItems(result.health ?? []);
     if (paused) {
       video.pause();
       stopTimer();
@@ -369,6 +382,13 @@
     window.CAMPUS_SETTINGS = campusSettings;
     window.CampusTab?.init?.(campusSettings);
 
+    /* 衛教宣導分頁設定注入（health 資料夾清單由 rescan 給 HealthTab.setItems） */
+    const healthSettings: BookSettings = {
+      intervalMs: (cfg as Partial<AppConfig> & { healthIntervalMs?: number }).healthIntervalMs ?? cfg.bookIntervalMs,
+    };
+    window.HEALTH_SETTINGS = healthSettings;
+    window.HealthTab?.init?.(healthSettings);
+
     /* 套用分頁顯示／隱藏設定（config.json 的 tabs 區塊） */
     const bootTabs = (cfg as Partial<AppConfig> & { tabs?: TabVisibility }).tabs;
     applyTabs(bootTabs);
@@ -376,7 +396,7 @@
     /* 預設分頁：只選目前允許顯示的分頁 */
     const vis = visibleTabList();
     const wantHonor = hasHonor && (cfg as Partial<AppConfig> & { defaultTab?: string }).defaultTab === "honor";
-    let startTab: "tv" | "honor" | "books" | "campus" = "tv";
+    let startTab: "tv" | "honor" | "books" | "campus" | "health" = "tv";
     if (wantHonor && vis.includes("honor")) startTab = "honor";
     else if (vis.length > 0 && !vis.includes("tv")) startTab = vis[0];
     setTab(startTab);

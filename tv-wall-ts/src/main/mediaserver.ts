@@ -21,6 +21,8 @@ export interface MediaServerOptions {
   booksDir?: string;
   /** 校園風雲圖片資料夾（campus 分頁；未提供＝不服務此分類） */
   campusDir?: string;
+  /** 衛教宣導圖片資料夾（health 分頁；未提供＝不服務此分類） */
+  healthDir?: string;
   port: number;
   /** config.json 的完整路徑（提供時啟用 GET /config 與 POST /config 修改分頁顯示設定） */
   configPath?: string;
@@ -132,6 +134,7 @@ function dirForKind(kind: string, o: MediaServerOptions): string | null {
   if (kind === "images") return o.imagesDir;
   if (kind === "books") return o.booksDir ?? null;
   if (kind === "campus") return o.campusDir ?? null;
+  if (kind === "health") return o.healthDir ?? null;
   return null;
 }
 
@@ -164,7 +167,7 @@ function localIPv4s(): string[] {
 
 /** 啟動內建伺服器（不回傳太複雜的東西；失敗時只記 log，不影響播放功能） */
 export function startMediaServer(o: MediaServerOptions): void {
-  for (const dir of [o.videoDir, o.imagesDir, ...(o.booksDir ? [o.booksDir] : []), ...(o.campusDir ? [o.campusDir] : [])]) {
+  for (const dir of [o.videoDir, o.imagesDir, ...(o.booksDir ? [o.booksDir] : []), ...(o.campusDir ? [o.campusDir] : []), ...(o.healthDir ? [o.healthDir] : [])]) {
     try {
       fs.mkdirSync(dir, { recursive: true });
     } catch (err) {
@@ -216,14 +219,15 @@ export function startMediaServer(o: MediaServerOptions): void {
 
             // 每個檔案可對應各自的 type，沒給則用預設
             const rawType = types[i] || defaultType;
-            const fileType: "video" | "image" | "book" | "campus" =
-              rawType === "video" ? "video" : rawType === "book" ? "book" : rawType === "campus" ? "campus" : "image";
+            const fileType: "video" | "image" | "book" | "campus" | "health" =
+              rawType === "video" ? "video" : rawType === "book" ? "book" : rawType === "campus" ? "campus" : rawType === "health" ? "health" : "image";
             const targetDir =
               fileType === "video" ? o.videoDir
               : fileType === "book" ? o.booksDir
               : fileType === "campus" ? o.campusDir
+              : fileType === "health" ? o.healthDir
               : o.imagesDir;
-            const allowedExts = fileType === "image" || fileType === "book" || fileType === "campus" ? IMAGE_EXTS : VIDEO_EXTS;
+            const allowedExts = fileType === "image" || fileType === "book" || fileType === "campus" || fileType === "health" ? IMAGE_EXTS : VIDEO_EXTS;
 
             if (!targetDir) {
               hasError = true;
@@ -269,7 +273,7 @@ export function startMediaServer(o: MediaServerOptions): void {
               results.push({
                 ok: true,
                 name: saveName,
-                path: (fileType === "video" ? "videos/" : fileType === "book" ? "books/" : fileType === "campus" ? "campus/" : "images/") + saveName,
+                path: (fileType === "video" ? "videos/" : fileType === "book" ? "books/" : fileType === "campus" ? "campus/" : fileType === "health" ? "health/" : "images/") + saveName,
                 size: stat.size,
                 hash: info.hash,
                 type: fileType,
@@ -355,40 +359,44 @@ export function startMediaServer(o: MediaServerOptions): void {
         const i = await buildList(o.imagesDir, IMAGE_EXTS);
         const b = o.booksDir ? await buildList(o.booksDir, IMAGE_EXTS) : [];
         const c = o.campusDir ? await buildList(o.campusDir, IMAGE_EXTS) : [];
-        sendText(res, 200, `電視牆伺服器：${v.length} 個影片、${i.length} 張圖片、${b.length} 本好書介紹、${c.length} 則校園風雲\n影片資料夾：${o.videoDir}\n圖片資料夾：${o.imagesDir}\n好書介紹資料夾：${o.booksDir ?? "（未設定）"}\n校園風雲資料夾：${o.campusDir ?? "（未設定）"}\n\nGET /files        列出所有可播放檔案（上傳工具介面用）\nGET /files/...    下載檔案\nPOST /upload      上傳檔案（multipart/form-data，欄位 file + type=video|image|book|campus）\nDELETE /files/:type/:name  刪除檔案\nGET /config       讀取分頁顯示設定\nPOST /config      更新分頁顯示設定（JSON：{ "tabs": { "tv": true, "honor": true, "books": true, "campus": true } }）\n`);
+        const h = o.healthDir ? await buildList(o.healthDir, IMAGE_EXTS) : [];
+        sendText(res, 200, `電視牆伺服器：${v.length} 個影片、${i.length} 張圖片、${b.length} 本好書介紹、${c.length} 則校園風雲、${h.length} 則衛教宣導\n影片資料夾：${o.videoDir}\n圖片資料夾：${o.imagesDir}\n好書介紹資料夾：${o.booksDir ?? "（未設定）"}\n校園風雲資料夾：${o.campusDir ?? "（未設定）"}\n衛教宣導資料夾：${o.healthDir ?? "（未設定）"}\n\nGET /files        列出所有可播放檔案（上傳工具介面用）\nGET /files/...    下載檔案\nPOST /upload      上傳檔案（multipart/form-data，欄位 file + type=video|image|book|campus|health）\nDELETE /files/:type/:name  刪除檔案\nGET /config       讀取分頁顯示設定\nPOST /config      更新分頁顯示設定（JSON：{ "tabs": { "tv": true, "honor": true, "books": true, "campus": true, "health": true } }）\n`);
         return;
       }
 
       /* ---------- 檔案清單（供用戶端 GUI 顯示） ---------- */
       if (pathname === "/files" && req.method === "GET") {
-        const [videos, images, books, campus] = await Promise.all([
+        const [videos, images, books, campus, health] = await Promise.all([
           buildList(o.videoDir, VIDEO_EXTS),
           buildList(o.imagesDir, IMAGE_EXTS),
           o.booksDir ? buildList(o.booksDir, IMAGE_EXTS) : Promise.resolve([]),
           o.campusDir ? buildList(o.campusDir, IMAGE_EXTS) : Promise.resolve([]),
+          o.healthDir ? buildList(o.healthDir, IMAGE_EXTS) : Promise.resolve([]),
         ]);
         sendJson(res, {
           videos: videos.map(f => ({ name: path.basename(f.path), size: f.size, type: "video", path: f.path })),
           images: images.map(f => ({ name: path.basename(f.path), size: f.size, type: "image", path: f.path })),
           books: books.map(f => ({ name: path.basename(f.path), size: f.size, type: "book", path: f.path })),
           campus: campus.map(f => ({ name: path.basename(f.path), size: f.size, type: "campus", path: f.path })),
+          health: health.map(f => ({ name: path.basename(f.path), size: f.size, type: "health", path: f.path })),
         });
         return;
       }
 
       if (pathname === "/manifest") {
-        const [videos, images, books, campus] = await Promise.all([
+        const [videos, images, books, campus, health] = await Promise.all([
           buildList(o.videoDir, VIDEO_EXTS),
           buildList(o.imagesDir, IMAGE_EXTS),
           o.booksDir ? buildList(o.booksDir, IMAGE_EXTS) : Promise.resolve([]),
           o.campusDir ? buildList(o.campusDir, IMAGE_EXTS) : Promise.resolve([]),
+          o.healthDir ? buildList(o.healthDir, IMAGE_EXTS) : Promise.resolve([]),
         ]);
-        sendJson(res, { videos, images, books, campus });
+        sendJson(res, { videos, images, books, campus, health });
         return;
       }
 
       /* ---------- 下載／刪除單一檔案 ---------- */
-      const filesMatch = /^\/files\/(videos|images|books|campus)\/(.+)$/.exec(pathname);
+      const filesMatch = /^\/files\/(videos|images|books|campus|health)\/(.+)$/.exec(pathname);
       if (filesMatch) {
         if (req.method === "DELETE") {
           const abs = resolveFilePath(filesMatch[1], filesMatch[2], o);
