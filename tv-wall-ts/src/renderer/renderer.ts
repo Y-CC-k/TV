@@ -37,6 +37,7 @@
   let iIdx = 0;
   let paused = false;
   let interval = 5000;
+  let videoFit = "contain";
   let timer: ReturnType<typeof setTimeout> | null = null;
   let autoTabTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -161,6 +162,8 @@
     const landscape = window.innerWidth >= window.innerHeight;
     root.classList.toggle("landscape", landscape);
     root.classList.toggle("portrait", !landscape);
+    // 寬螢幕：不變形 (contain)；直立：可變形 (fill)
+    video.style.objectFit = landscape ? videoFit : "fill";
   }
 
   /* 電視牆頁 hidden 時更新版面沒意義；切回 tv 頁時會呼叫 updateLayout */
@@ -357,7 +360,7 @@
   async function init(): Promise<void> {
     const cfg = await tvwall.config();
     interval = cfg.imageIntervalMs;
-    video.style.objectFit = cfg.videoFit;
+    videoFit = cfg.videoFit || "contain";
     image.style.objectFit = cfg.imageFit;
     image2.style.objectFit = cfg.imageFit;
     image3.style.objectFit = cfg.imageFit;
@@ -404,6 +407,8 @@
     /* 套用分頁顯示／隱藏設定（config.json 的 tabs 區塊） */
     const bootTabs = (cfg as Partial<AppConfig> & { tabs?: TabVisibility }).tabs;
     applyTabs(bootTabs);
+
+    updateLayout();
 
     /* 預設分頁：只選目前允許顯示的分頁 */
     const vis = visibleTabList();

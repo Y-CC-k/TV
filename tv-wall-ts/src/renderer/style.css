@@ -133,7 +133,7 @@ body {
 
 /* 直立（高螢幕）：30% 高度播放影片，其餘 70% 切成上下四塊播放相片 */
 #root.portrait #videoPane {
-  flex: 0 0 30%;
+  flex: 0 0 34%;
 }
 #root.portrait #imagePane,
 #root.portrait #imagePane2,
