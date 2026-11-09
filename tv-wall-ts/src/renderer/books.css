@@ -49,8 +49,8 @@
 /* ---------- 書籍卡片（固定區塊大小，不隨圖片比例跳動） ---------- */
 .book-card {
   position: relative;
-  width: 660px;            /* 固定寬度 */
-  height: 540px;           /* 固定高度，書卡不會隨封面比例跳動 */
+    width: 60%;             /* 寬螢幕：寬度 60% */
+    height: 90%;            /* 寬螢幕：高度 90% */
   max-width: 92vw;
   max-height: 88vh;
   min-width: 0;
@@ -201,8 +201,8 @@
     gap: 32px;
   }
   .book-card {
-    width: 990px;
-    height: 810px;
+    width: 95%;
+    height: 80%;
     max-width: 92vw;
     max-height: 88vh;
   }
