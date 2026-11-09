@@ -49,20 +49,10 @@
 /* ---------- 書籍卡片（固定區塊大小，不隨圖片比例跳動） ---------- */
 .book-card {
   position: relative;
-    width: 60%;             /* 寬螢幕：寬度 60% */
-    height: 90%;            /* 寬螢幕：高度 90% */
+  width: 70%;             /* 寬螢幕：寬度 70% */
+  height: 90%;            /* 寬螢幕：高度 90% */
   max-width: 92vw;
   max-height: 88vh;
-}
-
-/* 衛教宣導 / 校園風雲：寬螢幕 70% x 90% */
-#healthPage .book-card,
-#campusPage .book-card {
-  width: 70%;
-  height: 90%;
-  max-width: 92vw;
-  max-height: 88vh;
-}
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -211,16 +201,8 @@
     gap: 32px;
   }
   .book-card {
-    width: 95%;
-    height: 80%;
-    max-width: 92vw;
-    max-height: 88vh;
-  }
-  /* 衛教宣導 / 校園風雲：直向 95% x 80% */
-  #healthPage .book-card,
-  #campusPage .book-card {
-    width: 95%;
-    height: 80%;
+    width: 95%;             /* 長螢幕：寬度 95% */
+    height: 80%;            /* 長螢幕：高度 80% */
     max-width: 92vw;
     max-height: 88vh;
   }
