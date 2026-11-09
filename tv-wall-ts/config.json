@@ -1,0 +1,15 @@
+{
+  "imageIntervalMs": 5000,
+  "bookIntervalMs": 8000,
+  "booksDir": "books",
+  "videoFit": "contain",
+  "imageFit": "fill",
+  "serverMode": true,
+  "serverPort": 8123,
+  "defaultTab": "tv",
+  "honor": {
+    "supabaseUrl": "https://uhunwwvjzuaauklzzuwk.supabase.co",
+    "publishableKey": "sb_publishable_hxv***Myh",
+    "topN": 10
+  }
+}

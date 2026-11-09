@@ -1,0 +1,164 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  overflow: hidden;
+  font-family: "Microsoft JhengHei", "Microsoft YaHei", sans-serif;
+}
+
+/* 公告機 IP 顯示（右上角） */
+.server-ip-box {
+  position: fixed;
+  top: 8px;
+  right: 12px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+  backdrop-filter: blur(6px);
+  color: #e8eaed;
+  font-size: 14px;
+  font-weight: 600;
+  pointer-events: none;
+  user-select: none;
+}
+
+.server-ip-label {
+  color: #9aa6bd;
+}
+
+.server-ip-value {
+  color: #74b9ff;
+  font-family: "Consolas", "Monaco", monospace;
+}
+
+/* ===== 分頁結構：tabbar ＋ 頁面容器 ===== */
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+.tabbar {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px 0;
+  background: #0b0f18;
+  z-index: 50;
+}
+
+.tab {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  background: rgba(255, 255, 255, 0.06);
+  color: #9aa6bd;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  padding: 9px 22px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.tab:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #dbe6f5;
+}
+
+.tab.active {
+  background: rgba(255, 255, 255, 0.92);
+  color: #1c2433;
+  border-color: rgba(255, 255, 255, 0.8);
+}
+
+.tab-ico {
+  font-size: 15px;
+}
+
+.page {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.page.hidden,
+.tabbar.hidden {
+  display: none;
+}
+
+#root {
+  display: flex;
+  width: 100vw;
+  height: 100%;
+  background: #000;
+}
+
+/* 直立螢幕＝上下各半，橫向螢幕＝左右各半 */
+#root.portrait {
+  flex-direction: column;
+}
+
+#root.landscape {
+  flex-direction: row;
+}
+
+.pane {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+.pane video,
+.pane img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: #000;
+  object-fit: contain; /* 影片：不變形；以下 #image 由 renderer 依 config 覆寫 */
+}
+
+#image {
+  object-fit: fill; /* 圖片：變形填滿窗格（預設值，依 config.json 覆寫） */
+}
+
+.msg {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  text-align: center;
+  color: #888;
+  font-size: 16px;
+  line-height: 1.6;
+  background: transparent;
+}
+
+.msg.hidden {
+  display: none;
+}

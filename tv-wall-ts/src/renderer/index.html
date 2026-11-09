@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <title>電視牆 ＋ 積點排行</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="honor.css" />
+    <link rel="stylesheet" href="books.css" />
+  </head>
+  <body class="page-tv">
+
+    <!-- 公告機 IP 顯示（右上角，供用戶端輸入） -->
+    <div id="serverIpBox" class="server-ip-box">
+      <span class="server-ip-label">🖥 公告機 IP：</span>
+      <span id="serverIp" class="server-ip-value">--</span>
+    </div>
+
+    <!-- ===== 分頁列 ===== -->
+    <nav id="tabBar" class="tabbar">
+      <button type="button" id="tabTv" class="tab active">
+        <span class="tab-ico">📺</span><span>電視牆</span>
+      </button>
+      <button type="button" id="tabHonor" class="tab">
+        <span class="tab-ico">🏆</span><span>積點排行</span>
+      </button>
+      <button type="button" id="tabBooks" class="tab">
+        <span class="tab-ico">📚</span><span>好書介紹</span>
+      </button>
+    </nav>
+
+    <!-- ===== 分頁一：電視牆（原本的雙區播放） ===== -->
+    <div id="tvPage" class="page">
+      <div id="root" class="landscape">
+        <section id="videoPane" class="pane">
+          <video id="video" autoplay playsinline></video>
+          <div id="videoMsg" class="msg hidden"></div>
+        </section>
+        <section id="imagePane" class="pane">
+          <img id="image" alt="" />
+          <div id="imageMsg" class="msg hidden"></div>
+        </section>
+      </div>
+    </div>
+
+    <!-- ===== 分頁二：積點排行（積點系統，資料來源 Supabase） ===== -->
+    <div id="honorPage" class="page honor-page hidden">
+      <main class="shell-main">
+        <div class="content-zone">
+
+          <!-- 左區：個人資訊卡 -->
+          <section class="card left-zone">
+            <div class="card-head">
+              <span class="card-tag">學生資訊</span>
+              <div class="card-avatar-wrap"><span id="userAvatar" class="avatar-fallback">🧑‍🎓</span></div>
+            </div>
+            <div class="card-body">
+              <div class="query-box">
+                <input type="text" id="queryInput" placeholder="卡號/學號" maxlength="12" autocomplete="off" />
+                <button type="button" id="queryBtn">查詢</button>
+              </div>
+              <!-- 數字鍵盤（點選輸入卡號） -->
+              <div class="numpad" id="numpad">
+                <button type="button" class="np-btn" data-key="1">1</button>
+                <button type="button" class="np-btn" data-key="2">2</button>
+                <button type="button" class="np-btn" data-key="3">3</button>
+                <button type="button" class="np-btn" data-key="4">4</button>
+                <button type="button" class="np-btn" data-key="5">5</button>
+                <button type="button" class="np-btn" data-key="6">6</button>
+                <button type="button" class="np-btn" data-key="7">7</button>
+                <button type="button" class="np-btn" data-key="8">8</button>
+                <button type="button" class="np-btn" data-key="9">9</button>
+                <button type="button" class="np-btn np-clear" data-key="C">清除</button>
+                <button type="button" class="np-btn" data-key="0">0</button>
+                <button type="button" class="np-btn np-enter" data-key="E">確認</button>
+              </div>
+              <p class="user_name"><span id="stuName">　　　</span><span class="user_id_num" id="stuId">---</span></p>
+              <div class="score-grid">
+                <div class="score-item score-A" id="scoreA">
+                  <div class="score-label">英文</div>
+                  <div class="score-value">0</div>
+                </div>
+                <div class="score-item score-B" id="scoreB">
+                  <div class="score-label">閱讀</div>
+                  <div class="score-value">0</div>
+                </div>
+                <div class="score-item score-C" id="scoreC">
+                  <div class="score-label">跑步</div>
+                  <div class="score-value">0</div>
+                </div>
+                <div class="score-item score-D" id="scoreD">
+                  <div class="score-label">榮譽</div>
+                  <div class="score-value">0</div>
+                </div>
+              </div>
+              <!-- 左卡底部裝飾圖案 -->
+              <div class="card-deco" aria-hidden="true">
+                <span>🏆</span><span>🎓</span><span>⭐</span><span>🏅</span><span>📚</span><span>🎉</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- 右區：四個排行榜面板（由左至右平分） -->
+          <section class="card right-zone">
+            <div class="card-head">
+              <span class="card-tag">排行榜</span>
+              <div class="rank-switch">
+                <button type="button" id="rankBtnTotal" class="rank-switch-btn active">總排行</button>
+                <button type="button" id="rankBtnMonthly" class="rank-switch-btn">月排行</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="scoring" id="scoring"></div>
+            </div>
+          </section>
+
+        </div>
+      </main>
+
+      <!-- 積點排行狀態提示 -->
+      <div class="honor-toast" id="honorToast"></div>
+    </div>
+
+    <!-- ===== 分頁三：好書介紹（books 資料夾圖片，卡片式輪播） ===== -->
+    <div id="booksPage" class="page books-page hidden">
+      <main class="books-stage">
+        <button type="button" id="bookPrev" class="book-nav" aria-label="上一本">‹</button>
+
+        <aside class="book-sidebar book-sidebar--start" data-side="start">
+          <div class="book-sidebar-list" id="bookSidebarStart"></div>
+        </aside>
+
+        <section class="book-card">
+          <div class="book-cover-wrap">
+            <img id="bookCover" alt="" />
+          </div>
+          <div class="book-info">
+            <span class="book-tag">📖 好書介紹</span>
+            <h2 class="book-title" id="bookTitle"></h2>
+            <div class="book-meta" id="bookCounter"></div>
+          </div>
+        </section>
+
+        <aside class="book-sidebar book-sidebar--end" data-side="end">
+          <div class="book-sidebar-list" id="bookSidebarEnd"></div>
+        </aside>
+
+        <button type="button" id="bookNext" class="book-nav" aria-label="下一本">›</button>
+      </main>
+
+      <footer class="books-footer">
+        <div id="bookDots" class="book-dots"></div>
+      </footer>
+
+      <!-- 空清單訊息 -->
+      <div id="booksMsg" class="msg books-msg hidden"></div>
+    </div>
+
+    <script src="renderer.js"></script>
+    <script src="honor.js"></script>
+    <script src="books.js"></script>
+  </body>
+</html>

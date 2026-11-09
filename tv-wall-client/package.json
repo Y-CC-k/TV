@@ -1,0 +1,48 @@
+{
+  "name": "tv-wall-client",
+  "version": "1.0.0",
+  "description": "電視牆公告機用戶端上傳工具（GUI）",
+  "private": true,
+  "main": "main.js",
+  "allowScripts": true,
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "electron": "^45.2.3",
+    "electron-builder": "^24.0.0"
+  },
+  "build": {
+    "appId": "com.tvwall.client",
+    "productName": "TvWallClient",
+    "icon": "icon.ico",
+    "electronDist": "node_modules/electron/dist",
+    "afterPack": "scripts/afterpack.js",
+    "extraFiles": [
+      {
+        "from": "config.json",
+        "to": "config.json"
+      },
+      {
+        "from": "icon.ico",
+        "to": "icon.ico"
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "電視牆用戶端上傳工具",
+      "installerIcon": "icon.ico",
+      "uninstallerIcon": "icon.ico"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "servers": [
+    { "name": "測試", "ip": "127.0.0.1", "port": 8123 }
+  ],
+  "honor": {
+    "supabaseUrl": "https://uhunwwvjzuaauklzzuwk.supabase.co",
+    "publishableKey": "sb_publishable_hxv***Myh"
+  },
+  "password": "26562684"
+}

@@ -1,0 +1,15 @@
+﻿# dependencies
+node_modules/
+# build outputs
+dist/
+release/
+.tmp/
+build/
+# logs
+*.log
+tvwall-config-debug.*
+# os/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

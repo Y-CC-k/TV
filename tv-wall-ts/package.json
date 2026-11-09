@@ -1,0 +1,81 @@
+{
+  "name": "tv-wall-ts",
+  "version": "1.0.0",
+  "description": "電視牆雙區播放器（TypeScript + Electron）",
+  "private": true,
+  "main": "dist/main/main.js",
+  "scripts": {
+    "build": "node scripts/make-icon.mjs && tsc -p tsconfig.json && node scripts/copy-static.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "electron .",
+    "dev": "npm run build && electron .",
+    "serve": "node server/server.js",
+    "dist": "npm run build && electron-builder --win dir && node scripts/name-exe.js"
+  },
+  "devDependencies": {
+    "@types/formidable": "^3.5.1",
+    "@types/node": "^26.6.5",
+    "electron": "^45.2.3",
+    "electron-builder": "^26.15.3",
+    "jimp": "^1.6.1",
+    "typescript": "^7.0.2"
+  },
+  "build": {
+    "appId": "com.tvwall.player",
+    "productName": "TvWall",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "electronDist": "node_modules/electron/dist",
+    "electronLanguages": [
+      "zh-TW",
+      "zh-CN",
+      "en-US"
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "dir",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "電視牆播放器",
+      "runAfterFinish": false,
+      "deleteAppDataOnUninstall": true,
+      "artifactName": "TvWall-Setup-${version}.${ext}"
+    },
+    "extraFiles": [
+      {
+        "from": "config.portable.json",
+        "to": "config.json"
+      },
+      {
+        "from": "install-autorun.bat",
+        "to": "install-autorun.bat"
+      },
+      {
+        "from": "start-tvwall.vbs",
+        "to": "start-tvwall.vbs"
+      }
+    ]
+  },
+  "dependencies": {
+    "formidable": "^3.5.4"
+  }
+}

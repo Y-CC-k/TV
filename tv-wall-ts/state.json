@@ -1,0 +1,52 @@
+{
+  "title": "電視牆 ＋ 積點排行",
+  "rootClass": "landscape",
+  "viewport": [
+    1920,
+    1080
+  ],
+  "videoRect": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "imageRect": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "videoSrc": "file:///C:/Users/yang/Documents/tv-wall-ts/video/A26289575502BC91E96C2AF7728171BBF8F4833B.mp4",
+  "videoReadyState": 4,
+  "videoPaused": true,
+  "videoError": null,
+  "videoSize": [
+    1280,
+    720
+  ],
+  "videoTime": 0,
+  "imageSrc": "file:///C:/Users/yang/Documents/tv-wall-ts/images/3F94A563-C075-4D1A-8F90-B44981378B76-L0-001_0.jpg",
+  "imageOk": true,
+  "imageSize": [
+    1479,
+    1109
+  ],
+  "videoFit": "contain",
+  "imageFit": "fill",
+  "videoMsg": "",
+  "imageMsg": "",
+  "bodyClass": "page-books",
+  "tabBarHidden": false,
+  "tabTvActive": false,
+  "tabHonorActive": false,
+  "tabBooksActive": true,
+  "booksPageHidden": false,
+  "bookSettingsSet": true,
+  "bookCounter": "第 1 本／共 3 本",
+  "booksMsg": "",
+  "honorSettingsSet": true,
+  "honorScoringChildren": 4,
+  "honorScoringText": "英文載入中…閱讀載入中…跑步載入中…榮譽載入中…",
+  "honorToast": ""
+}
