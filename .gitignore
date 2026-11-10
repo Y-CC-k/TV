@@ -1,15 +1,5 @@
-﻿# dependencies
-node_modules/
-# build outputs
-dist/
-release/
-.tmp/
-build/
-# logs
-*.log
-tvwall-config-debug.*
-# os/editor
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
+﻿tv-wall-ts/config.json
+tv-wall-ts/config.portable.json
+tv-wall-ts/config.server.json
+tv-wall-ts/state.json
+tv-wall-client/config.json
