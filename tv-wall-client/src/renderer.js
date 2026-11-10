@@ -49,6 +49,7 @@
   /* ---------- 元素：好書介紹 ---------- */
   const bookServerSelect = $("bookServerSelect");
   const bookTitleInput = $("bookTitleInput");
+  const uploadAllServers = $("uploadAllServers");
   const bookFileTypeRadios = document.querySelectorAll('input[name="bookFileType"]');
   const bookBtnSelectFile = $("bookBtnSelectFile");
   const bookFileInput = $("bookFileInput");
@@ -620,14 +621,51 @@
     return String(t || "").replace(/[\\/:*?"<>|\r\n\t]+/g, " ").trim();
   }
 
+  /* 單一檔案上傳到指定伺服器 */
+  async function uploadSingleFile(file, baseUrl, bookType, title) {
+    let uploadName = file.name;
+    const ext = (file.name.match(/\.[^.]+$/) || [""])[0];
+    if (bookType === "book" && title && uploadName) {
+      // 單一檔案且有填書名 → 以書名當檔名
+    }
+    const formData = new FormData();
+    formData.append("file", file, uploadName);
+    formData.append("type", bookType);
+
+    try {
+      const res = await fetch(`${baseUrl}/upload`, {
+        method: "POST",
+        body: formData,
+        signal: AbortSignal.timeout(300000),
+      });
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        throw new Error("HTTP " + res.status + (errText ? ": " + errText.slice(0, 200) : ""));
+      }
+      const result = await res.json();
+      const r = (result.results && result.results[0]) || result;
+      if (r.ok) {
+        return { ok: true, name: r.name || uploadName };
+      } else {
+        return { ok: false, name: file.name, error: r.error || result.message || "失敗" };
+      }
+    } catch (err) {
+      return { ok: false, name: file.name, error: err.message };
+    }
+  }
+
   bookBtnUpload.addEventListener("click", async () => {
     if (bookSelectedFiles.length === 0) return;
-    if (!selectedServerId) {
+
+    const bookType = document.querySelector('input[name="bookFileType"]:checked').value || "book";
+    const title = sanitizeBookTitle(bookTitleInput.value);
+    const uploadAll = uploadAllServers.checked;
+
+    if (!uploadAll && !selectedServerId) {
       await alertMsg("請先選擇公告機");
       return;
     }
-    const title = sanitizeBookTitle(bookTitleInput.value);
-    const bookType = document.querySelector('input[name="bookFileType"]:checked').value || "book";
+
     if (bookType === "book" && title && bookSelectedFiles.length > 1) {
       bookMsg.textContent = "提示：多張圖片時「書名」不套用，使用原檔名上傳";
       bookMsg.className = "msg";
@@ -642,58 +680,40 @@
     let successCount = 0;
     const results = [];
 
-    for (let i = 0; i < bookSelectedFiles.length; i++) {
-      const file = bookSelectedFiles[i];
-      /* 有填書名且只選一張圖（且類型為好書介紹）→ 以書名當檔名 */
-      let uploadName = file.name;
-      const ext = (file.name.match(/\.[^.]+$/) || [""])[0];
-      if (bookType === "book" && title && bookSelectedFiles.length === 1) {
-        uploadName = title + (ext || ".jpg");
-      }
-      const formData = new FormData();
-      formData.append("file", file, uploadName);
-      formData.append("type", bookType);
+    // 決定要上傳到哪些伺服器
+    const targets = uploadAll
+      ? servers.filter((s) => s.ip && s.port).map((s) => `http://${s.ip}:${s.port}`)
+      : [currentBaseUrl];
 
-      bookMsg.textContent = `上傳中 (${i + 1}/${bookSelectedFiles.length})：${file.name}`;
-      bookProgressText.textContent = `${Math.round((i / bookSelectedFiles.length) * 100)}%`;
+    let totalTasks = bookSelectedFiles.length * targets.length;
+    let doneTasks = 0;
 
-      try {
-        const res = await fetch(`${currentBaseUrl}/upload`, {
-          method: "POST",
-          body: formData,
-          signal: AbortSignal.timeout(300000),
-        });
-        if (!res.ok) {
-          const errText = await res.text().catch(() => "");
-          throw new Error("HTTP " + res.status + (errText ? ": " + errText.slice(0, 200) : ""));
-        }
-        const result = await res.json();
-        const r = (result.results && result.results[0]) || result;
+    for (const file of bookSelectedFiles) {
+      for (const baseUrl of targets) {
+        const r = await uploadSingleFile(file, baseUrl, bookType, title);
+        doneTasks++;
         if (r.ok) {
           successCount++;
-          results.push({ ok: true, name: r.name || uploadName });
+          results.push({ ok: true, name: r.name || file.name, server: baseUrl });
         } else {
-          results.push({ ok: false, name: file.name, error: r.error || result.message || "失敗" });
+          results.push({ ok: false, name: file.name, error: r.error || "失敗", server: baseUrl });
         }
-      } catch (err) {
-        results.push({ ok: false, name: file.name, error: err.message });
+        bookProgress.value = Math.round((doneTasks / totalTasks) * 100);
+        bookProgressText.textContent = `${bookProgress.value}%`;
       }
-
-      bookProgress.value = Math.round(((i + 1) / bookSelectedFiles.length) * 100);
-      bookProgressText.textContent = `${Math.round(((i + 1) / bookSelectedFiles.length) * 100)}%`;
     }
 
     const okList = results.filter((r) => r.ok).map((r) => bookTitleFromName(r.name)).join("、");
     const failList = results.filter((r) => !r.ok).map((r) => `${r.name}（${r.error || "失敗"}）`).join("、");
 
     if (results.every((r) => r.ok)) {
-      bookMsg.textContent = `上傳成功（${successCount} 本）：${okList}`;
+      bookMsg.textContent = `上傳成功（${successCount} 個檔案）：${okList}`;
       bookMsg.className = "msg success";
     } else if (successCount === 0) {
       bookMsg.textContent = `全部上傳失敗：${failList}`;
       bookMsg.className = "msg error";
     } else {
-      bookMsg.textContent = `上傳完成：成功 ${successCount} 本、失敗 ${results.length - successCount} 本\n失敗：${failList}`;
+      bookMsg.textContent = `上傳完成：成功 ${successCount} 個、失敗 ${results.length - successCount} 個\n失敗：${failList}`;
       bookMsg.className = "msg error";
     }
 
