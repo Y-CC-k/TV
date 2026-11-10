@@ -7,8 +7,7 @@
   let servers = JSON.parse(localStorage.getItem("tvwall_servers") || "[]");
   let selectedServerId = null; // 目前選定的公告機 ID（用於上傳/檔案清單）
   let currentBaseUrl = "";     // 目前選定公告機的 baseUrl
-  let selectedFiles = []; // File[] 多個選中的檔案
-  let bookSelectedFiles = []; // File[]（好書介紹）多個選中的圖片
+  let bookSelectedFiles = []; // File[] 多個選中的檔案
 
   /* ---------- 榮譽榜狀態 ---------- */
   let honorSettings = {
@@ -17,12 +16,10 @@
   };
 
   /* ---------- 元素：大分頁 ---------- */
-  const tabTv = $("tabTv");
   const tabBooks = $("tabBooks");
   const tabHonor = $("tabHonor");
   const tabQuery = $("tabQuery");
   const tabSettings = $("tabSettings");
-  const panelTv = $("panelTv");
   const panelBooks = $("panelBooks");
   const panelHonor = $("panelHonor");
   const panelQuery = $("panelQuery");
@@ -35,21 +32,10 @@
   const btnAddServer = $("btnAddServer");
   const serverList = $("serverList");
 
-  /* ---------- 元素：上傳 ---------- */
-  const uploadServerSelect = $("uploadServerSelect");
-  const uploadFileTypeRadios = document.querySelectorAll('input[name="uploadFileType"]');
-  const tvUploadAllServers = $("tvUploadAllServers");
-  const uploadBtnSelectFile = $("uploadBtnSelectFile");
-  const uploadFileInput = $("uploadFileInput");
-  const uploadSelectedFile = $("uploadSelectedFile");
-  const uploadBtnUpload = $("uploadBtnUpload");
-  const uploadProgress = $("uploadProgress");
-  const uploadProgressText = $("uploadProgressText");
-  const uploadMsg = $("uploadMsg");
-
-  /* ---------- 元素：好書介紹 ---------- */
+  /* ---------- 元素：資料傳輸 ---------- */
   const bookServerSelect = $("bookServerSelect");
   const bookTitleInput = $("bookTitleInput");
+  const bookTitleRow = $("bookTitleRow");
   const uploadAllServers = $("uploadAllServers");
   const bookFileTypeRadios = document.querySelectorAll('input[name="bookFileType"]');
   const bookBtnSelectFile = $("bookBtnSelectFile");
@@ -63,11 +49,6 @@
   const bookListCount = $("bookListCount");
   const bookTableBody = $("bookTableBody");
   const bookTableWrap = $("bookTableWrap");
-
-  /* ---------- 元素：檔案清單 ---------- */
-  const filesBtnRefresh = $("filesBtnRefresh");
-  const filesListCount = $("filesListCount");
-  const filesTableBody = $("filesTableBody");
 
   /* ---------- 元素：榮譽榜設定 ---------- */
   const honorSupabaseUrl = $("honorSupabaseUrl");
@@ -327,17 +308,15 @@
 
   /* ---------- 大分頁切換 ---------- */
   function switchTab(tab) {
-    [tabTv, tabBooks, tabHonor, tabQuery, tabSettings].forEach((t) => {
+    [tabBooks, tabHonor, tabQuery, tabSettings].forEach((t) => {
       t.classList.remove("tab--active");
       t.setAttribute("aria-selected", "false");
     });
-    [panelTv, panelBooks, panelHonor, panelQuery, panelSettings].forEach((p) => p.classList.add("hidden"));
+    [panelBooks, panelHonor, panelQuery, panelSettings].forEach((p) => p.classList.add("hidden"));
     tab.classList.add("tab--active");
     tab.setAttribute("aria-selected", "true");
 
-    if (tab === tabTv) {
-      panelTv.classList.remove("hidden");
-    } else if (tab === tabBooks) {
+    if (tab === tabBooks) {
       panelBooks.classList.remove("hidden");
       loadBookList();
     } else if (tab === tabHonor) {
@@ -354,7 +333,6 @@
     }
   }
 
-  tabTv.addEventListener("click", () => switchTab(tabTv));
   tabBooks.addEventListener("click", () => switchTab(tabBooks));
   tabHonor.addEventListener("click", () => switchTab(tabHonor));
   tabQuery.addEventListener("click", () => switchTab(tabQuery));
@@ -524,9 +502,9 @@
 
 
 
-  /* 填入下拉選單（上傳 / 檔案清單 / 好書介紹 / 分頁顯示設定） */
+  /* 填入下拉選單（好書介紹 / 分頁顯示設定） */
   function populateServerSelects() {
-    [uploadServerSelect, bookServerSelect, tabServerSelect].forEach((sel) => {
+    [bookServerSelect, tabServerSelect].forEach((sel) => {
       sel.innerHTML = '<option value="">-- 請選擇公告機 --</option>';
       servers.forEach((s) => {
         const opt = document.createElement("option");
@@ -537,7 +515,6 @@
     });
 
     if (selectedServerId) {
-      uploadServerSelect.value = selectedServerId;
       bookServerSelect.value = selectedServerId;
       tabServerSelect.value = selectedServerId;
       loadServerInfo(selectedServerId);
@@ -549,24 +526,10 @@
     const s = servers.find((x) => x.id === serverId);
     if (!s) return;
     currentBaseUrl = `http://${s.ip}:${s.port}`;
-    uploadBtnUpload.disabled = !selectedFiles.length;
     bookBtnUpload.disabled = !bookSelectedFiles.length;
   }
 
-  uploadServerSelect.addEventListener("change", (e) => {
-    selectedServerId = e.target.value || null;
-    if (selectedServerId) {
-      loadServerInfo(selectedServerId);
-      loadFileList();
-    } else {
-      currentBaseUrl = "";
-      filesTableBody.innerHTML = "";
-      filesListCount.textContent = "0 個檔案";
-      uploadBtnUpload.disabled = true;
-    }
-  });
-
-  /* ---------- 好書介紹：元素事件 ---------- */
+  /* ---------- 資料傳輸：元素事件 ---------- */
   bookServerSelect.addEventListener("change", (e) => {
     selectedServerId = e.target.value || null;
     if (selectedServerId) {
@@ -582,9 +545,23 @@
 
   bookFileTypeRadios.forEach((radio) => {
     radio.addEventListener("change", () => {
+      updateBookTypeUi();
       loadBookList();
     });
   });
+
+  /** 依選擇的類型調整：影片／照片不顯示書名欄位、檔案選擇接受格式 */
+  function updateBookTypeUi() {
+    const bookType = document.querySelector('input[name="bookFileType"]:checked').value || "book";
+    bookTitleRow.classList.toggle("hidden", bookType === "video" || bookType === "image");
+    bookFileInput.accept = bookType === "video" ? "video/*" : "image/*";
+    /* 切換類型時清除已選檔案，避免誤傳錯誤格式 */
+    bookSelectedFiles = [];
+    bookFileInput.value = "";
+    bookSelectedFile.textContent = "未選擇檔案";
+    bookBtnUpload.disabled = !selectedServerId;
+    bookMsg.textContent = "";
+  }
 
   bookBtnSelectFile.addEventListener("click", () => bookFileInput.click());
   bookFileInput.addEventListener("change", (e) => {
@@ -592,7 +569,8 @@
     if (files.length === 0) return;
     bookSelectedFiles = files;
     const totalMB = (files.reduce((sum, f) => sum + f.size, 0) / 1024 / 1024).toFixed(2);
-    bookSelectedFile.textContent = `已選擇 ${files.length} 張圖片（共 ${totalMB} MB）`;
+    const unit = document.querySelector('input[name="bookFileType"]:checked').value === "video" ? "個影片" : "個檔案";
+    bookSelectedFile.textContent = `已選擇 ${files.length} ${unit}（共 ${totalMB} MB）`;
     bookBtnUpload.disabled = !selectedServerId;
     bookMsg.textContent = "";
     bookProgress.value = 0;
@@ -611,13 +589,9 @@
     return String(t || "").replace(/[\\/:*?"<>|\r\n\t]+/g, " ").trim();
   }
 
-  /* 單一檔案上傳到指定伺服器 */
-  async function uploadSingleFile(file, baseUrl, bookType, title) {
-    let uploadName = file.name;
-    const ext = (file.name.match(/\.[^.]+$/) || [""])[0];
-    if (bookType === "book" && title && uploadName) {
-      // 單一檔案且有填書名 → 以書名當檔名
-    }
+  /* 單一檔案上傳到指定伺服器；overrideName 為欲使用的檔名（null = 原檔名） */
+  async function uploadSingleFile(file, baseUrl, bookType, overrideName) {
+    const uploadName = overrideName || file.name;
     const formData = new FormData();
     formData.append("file", file, uploadName);
     formData.append("type", bookType);
@@ -657,9 +631,14 @@
     }
 
     if (bookType === "book" && title && bookSelectedFiles.length > 1) {
-      bookMsg.textContent = "提示：多張圖片時「書名」不套用，使用原檔名上傳";
+      bookMsg.textContent = "提示：多張圖片時「標題」不套用，使用原檔名上傳";
       bookMsg.className = "msg";
     }
+
+    /* 好書介紹 + 只選一張圖 + 有填書名 → 以書名當檔名（其餘用原檔名） */
+    const overrideName = bookType === "book" && title && bookSelectedFiles.length === 1
+      ? title + ((bookSelectedFiles[0].name.match(/\.[^.]+$/) || [""])[0] || ".jpg")
+      : null;
 
     bookMsg.textContent = "上傳中…";
     bookMsg.className = "msg";
@@ -680,7 +659,7 @@
 
     for (const file of bookSelectedFiles) {
       for (const baseUrl of targets) {
-        const r = await uploadSingleFile(file, baseUrl, bookType, title);
+        const r = await uploadSingleFile(file, baseUrl, bookType, overrideName);
         doneTasks++;
         if (r.ok) {
           successCount++;
@@ -709,7 +688,7 @@
 
     bookSelectedFiles = [];
     bookFileInput.value = "";
-    bookSelectedFile.textContent = "未選擇圖片";
+    bookSelectedFile.textContent = "未選擇檔案";
     bookTitleInput.value = "";
     bookBtnUpload.disabled = !selectedServerId;
 
@@ -729,8 +708,9 @@
       const data = await res.json();
 
       const bookType = document.querySelector('input[name="bookFileType"]:checked').value || "book";
-      const typeKey = bookType === "book" ? "books" : bookType;
-      const typeName = bookType === "book" ? "好書介紹" : bookType === "campus" ? "校園風雲" : "衛教宣導";
+      /* 伺服器 /files 清單的鍵：video→videos、image→images、book→books */
+      const typeKey = bookType === "video" ? "videos" : bookType === "image" ? "images" : bookType === "book" ? "books" : bookType;
+      const typeName = { video: "影片", image: "照片", book: "好書介紹", campus: "校園風雲", health: "衛教宣導" }[bookType] || bookType;
       const files = data[typeKey] || [];
 
       bookListCount.textContent = files.length + " 個檔案";
@@ -746,11 +726,16 @@
 
       files.forEach((f) => {
         const tr = document.createElement("tr");
+        /* 影片無縮圖 → 🎬 佔位；影片大小以 MB 顯示 */
+        const thumbHtml = bookType === "video"
+          ? `<span style="font-size:36px;line-height:64px;">🎬</span>`
+          : `<img class="book-thumb" src="${currentBaseUrl}/files/${typeKey}/${encodeURIComponent(f.name)}" alt="" />`;
+        const delim = bookType === "video" ? `${(f.size / 1024 / 1024).toFixed(2)} MB` : `${(f.size / 1024).toFixed(0)} KB`;
         tr.innerHTML =
-          `<td class="col-thumb"><img class="book-thumb" src="${currentBaseUrl}/files/${typeKey}/${encodeURIComponent(f.name)}" alt="" /></td>` +
-          `<td class="col-title">${esc(bookTitleFromName(f.name))}</td>` +
+          `<td class="col-thumb">${thumbHtml}</td>` +
+          `<td class="col-title">${esc(bookType === "video" ? "影片" : bookType === "image" ? "照片" : bookTitleFromName(f.name))}</td>` +
           `<td class="col-file">${esc(f.name)}</td>` +
-          `<td class="col-size">${(f.size / 1024).toFixed(0)} KB</td>` +
+          `<td class="col-size">${delim}</td>` +
           `<td class="col-action book-actions"><button data-name="${esc(f.name)}">刪除</button></td>`;
         bookTableBody.appendChild(tr);
       });
@@ -758,7 +743,7 @@
       bookTableBody.querySelectorAll("button").forEach((btn) => {
         btn.addEventListener("click", async () => {
           const name = btn.getAttribute("data-name");
-          if (!(await confirmMsg(`確定要刪除「${bookTitleFromName(name)}」嗎？`))) return;
+          if (!(await confirmMsg(`確定要刪除「${name}」嗎？`))) return;
           try {
             const delRes = await fetch(
               `${currentBaseUrl}/files/${typeKey}/${encodeURIComponent(name)}`,
@@ -795,200 +780,6 @@
       return false;
     }
   }
-
-  /* ---------- 上傳 ---------- */
-  uploadBtnSelectFile.addEventListener("click", () => uploadFileInput.click());
-  uploadFileInput.addEventListener("change", (e) => {
-    const files = Array.from(uploadFileInput.files || []);
-    if (files.length === 0) return;
-    selectedFiles = files;
-    const totalMB = (files.reduce((sum, f) => sum + f.size, 0) / 1024 / 1024).toFixed(2);
-    uploadSelectedFile.textContent = `已選擇 ${files.length} 個檔案（共 ${totalMB} MB）`;
-    uploadBtnUpload.disabled = !selectedServerId;
-    uploadMsg.textContent = "";
-    uploadProgress.value = 0;
-    uploadProgressText.textContent = "0%";
-  });
-
-  async function uploadFileToServer(file, baseUrl, type) {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("type", type);
-
-    try {
-      const res = await fetch(`${baseUrl}/upload`, {
-        method: "POST",
-        body: formData,
-        signal: AbortSignal.timeout(300000),
-      });
-      if (!res.ok) {
-        const errText = await res.text().catch(() => "");
-        throw new Error("HTTP " + res.status + (errText ? ": " + errText.slice(0, 200) : ""));
-      }
-      const result = await res.json();
-      if (result.ok && result.results) {
-        const r = result.results[0] || {};
-        if (r.ok) return { ok: true, name: r.name || file.name };
-        else return { ok: false, name: file.name, error: r.error || "失敗" };
-      } else {
-        return { ok: true, name: result.name || file.name };
-      }
-    } catch (err) {
-      return { ok: false, name: file.name, error: err.message };
-    }
-  }
-
-  uploadBtnUpload.addEventListener("click", async () => {
-    if (selectedFiles.length === 0) return;
-
-    const uploadAll = tvUploadAllServers.checked;
-    const type = document.querySelector('input[name="uploadFileType"]:checked').value;
-
-    if (!uploadAll && !selectedServerId) {
-      await alertMsg("請先選擇公告機");
-      return;
-    }
-
-    const targets = uploadAll
-      ? servers.filter((s) => s.ip && s.port).map((s) => `http://${s.ip}:${s.port}`)
-      : [currentBaseUrl];
-
-    uploadMsg.textContent = "上傳中…";
-    uploadMsg.className = "msg";
-    uploadProgress.value = 0;
-    uploadProgressText.textContent = "0%";
-    uploadBtnUpload.disabled = true;
-
-    let successCount = 0;
-    let failCount = 0;
-    const results = [];
-    let doneTasks = 0;
-    const totalTasks = selectedFiles.length * targets.length;
-
-    for (const file of selectedFiles) {
-      for (const baseUrl of targets) {
-        const r = await uploadFileToServer(file, baseUrl, type);
-        doneTasks++;
-        if (r.ok) {
-          successCount++;
-          results.push({ ok: true, name: r.name, server: baseUrl });
-        } else {
-          failCount++;
-          results.push({ ok: false, name: r.name, error: r.error || "失敗", server: baseUrl });
-        }
-        uploadProgress.value = Math.round((doneTasks / totalTasks) * 100);
-        uploadProgressText.textContent = `${Math.round((doneTasks / totalTasks) * 100)}%`;
-      }
-    }
-
-    const okList = results.filter((r) => r.ok).map((r) => r.name).join(", ");
-    const failList = results.filter((r) => !r.ok).map((r) => `${r.name}(${r.error || "失敗"})`).join(", ");
-
-    let msg = "";
-    if (failCount === 0) {
-      msg = `全部上傳成功（${successCount} 個檔案）：${okList}`;
-      uploadMsg.className = "msg success";
-    } else if (successCount === 0) {
-      msg = `全部上傳失敗（${failCount} 個檔案）：${failList}`;
-      uploadMsg.className = "msg error";
-    } else {
-      msg = `上傳完成：成功 ${successCount} 個，失敗 ${failCount} 個\n成功：${okList}\n失敗：${failList}`;
-      uploadMsg.className = "msg error";
-    }
-    uploadMsg.textContent = msg;
-
-    selectedFiles = [];
-    uploadFileInput.value = "";
-    uploadSelectedFile.textContent = "未選擇檔案";
-    uploadBtnUpload.disabled = true;
-
-    setTimeout(() => {
-      if (!uploadAll) loadFileList();
-    }, 1500);
-  });
-
-  /* ---------- 檔案清單（表列，與資料傳輸分頁同款） ---------- */
-  async function loadFileList() {
-    if (!currentBaseUrl) {
-      filesTableBody.innerHTML = "";
-      filesListCount.textContent = "0 個檔案";
-      return;
-    }
-    try {
-      const res = await fetch(`${currentBaseUrl}/files`, { signal: AbortSignal.timeout(5000) });
-      if (!res.ok) throw new Error("無法取得清單 HTTP " + res.status);
-      const data = await res.json();
-
-      const videos = data.videos || [];
-      const images = data.images || [];
-      /* 只顯示電視牆內容：影片 + 照片（好書介紹／校園風雲／衛教宣導在資料傳輸分頁管理） */
-      const allFiles = [...videos, ...images];
-
-      filesListCount.textContent = allFiles.length + " 個檔案";
-      filesTableBody.innerHTML = "";
-
-      const typeNameMap = { video: "影片", image: "照片" };
-
-      if (allFiles.length === 0) {
-        filesTableBody.innerHTML =
-          `<tr><td colspan="5" style="color:#94a3b8;padding:24px;text-align:center;">公告機上沒有檔案，請先用上方上傳</td></tr>`;
-        return;
-      }
-
-      allFiles.sort((a, b) => {
-        if (a.type !== b.type) {
-          const order = { video: 0, image: 1 };
-          return (order[a.type] ?? 9) - (order[b.type] ?? 9);
-        }
-        return a.name.localeCompare(b.name, "zh-Hant");
-      });
-
-      for (const f of allFiles) {
-        const tr = document.createElement("tr");
-        /* 影片無縮圖 → 用 🎬 佔位；其餘皆有圖可當縮圖 */
-        const thumbSrc = f.type === "video" ? "" : `${currentBaseUrl}/files/${type2Dir(f.type)}/${encodeURIComponent(f.name)}`;
-        const thumbHtml = f.type === "video"
-          ? `<span style="font-size:36px;line-height:64px;">🎬</span>`
-          : `<img class="book-thumb" src="${thumbSrc}" alt="" />`;
-        tr.innerHTML =
-          `<td class="col-thumb">${thumbHtml}</td>` +
-          `<td class="col-title">${typeNameMap[f.type] || f.type}</td>` +
-          `<td class="col-file">${esc(f.name)}</td>` +
-          `<td class="col-size">${f.type === "video" ? (f.size / 1024 / 1024).toFixed(2) + " MB" : (f.size / 1024).toFixed(0) + " KB"}</td>` +
-          `<td class="col-action book-actions"><button data-type="${f.type}" data-name="${esc(f.name)}">刪除</button></td>`;
-        filesTableBody.appendChild(tr);
-      }
-
-      filesTableBody.querySelectorAll("button").forEach((btn) => {
-        btn.addEventListener("click", async () => {
-          const type = btn.getAttribute("data-type");
-          const name = btn.getAttribute("data-name");
-          if (!(await confirmMsg(`確定要刪除「${name}」嗎？`))) return;
-          const delType = type === "video" ? "videos" : type === "book" ? "books" : type === "campus" ? "campus" : type === "health" ? "health" : "images";
-          try {
-            const delRes = await fetch(`${currentBaseUrl}/files/${delType}/${encodeURIComponent(name)}`, {
-              method: "DELETE",
-              signal: AbortSignal.timeout(10000),
-            });
-            if (!delRes.ok) throw new Error("刪除失敗 HTTP " + delRes.status);
-            loadFileList();
-          } catch (err) {
-            alertMsg("刪除失敗：" + err.message);
-          }
-        });
-      });
-    } catch (err) {
-      filesTableBody.innerHTML =
-        `<tr><td colspan="5" style="color:#f87171;padding:24px;text-align:center;">載入失敗：${esc(err.message)}</td></tr>`;
-    }
-  }
-
-  /* type → 伺服器檔案目錄名（API 呼叫用） */
-  function type2Dir(type) {
-    return type === "video" ? "videos" : type === "book" ? "books" : type === "campus" ? "campus" : type === "health" ? "health" : "images";
-  }
-
-  filesBtnRefresh.addEventListener("click", loadFileList);
 
   /* ---------- 榮譽榜設定 ---------- */
   function loadHonorSettingsIntoForm() {
@@ -1463,13 +1254,13 @@
 
     if (servers.length > 0 && !selectedServerId) {
       selectedServerId = servers[0].id;
-      uploadServerSelect.value = selectedServerId;
+      bookServerSelect.value = selectedServerId;
       loadServerInfo(selectedServerId);
     }
 
-    uploadBtnUpload.disabled = true;
+    bookBtnUpload.disabled = true;
 
-    /* 啟動時自動載入精彩槺榔檔案清單（已依上方公告機選擇連動） */
-    if (selectedServerId) loadFileList();
+    /* 啟動時自動載入資料傳輸檔案清單（已依公告機選擇連動） */
+    if (selectedServerId) loadBookList();
   })();
 })();

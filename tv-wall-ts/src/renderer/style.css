@@ -166,6 +166,46 @@ body {
   object-fit: fill; /* 圖片：變形填滿窗格（預設值，依 config.json 覆寫） */
 }
 
+/* ---------- 照片標題浮層：淡入浮現於照片區塊下方 ---------- */
+.image-caption {
+  position: absolute;
+  left: 50%;
+  bottom: 2.5%;
+  transform: translateX(-50%);
+  max-width: 92%;
+  padding: 8px 20px;
+  border-radius: 999px;
+  background: rgba(10, 14, 22, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #f2f6ff;
+  font-size: clamp(14px, 2.6vmin, 24px);
+  font-weight: 700;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.image-caption.caption-in {
+  animation: captionIn 0.6s ease-out 0.25s both;
+}
+
+@keyframes captionIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
 #image2 {
   object-fit: fill;
 }

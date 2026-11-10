@@ -16,6 +16,10 @@
   const image2 = $<HTMLImageElement>("image2");
   const image3 = $<HTMLImageElement>("image3");
   const image4 = $<HTMLImageElement>("image4");
+  const imageCaption = $("imageCaption");
+  const imageCaption2 = $("imageCaption2");
+  const imageCaption3 = $("imageCaption3");
+  const imageCaption4 = $("imageCaption4");
   const videoMsg = $("videoMsg");
   const imageMsg = $("imageMsg");
   const tabBar = $("tabBar");
@@ -220,14 +224,29 @@
       image2.removeAttribute("src");
       image3.removeAttribute("src");
       image4.removeAttribute("src");
+      for (const cap of [imageCaption, imageCaption2, imageCaption3, imageCaption4]) cap.textContent = "";
       setMsg(imageMsg, "images 資料夾沒有圖片");
       return;
     }
     setMsg(imageMsg, null);
-    image.src = images[iIdx].url;
-    image2.src = images[(iIdx + 1) % images.length].url;
-    image3.src = images[(iIdx + 2) % images.length].url;
-    image4.src = images[(iIdx + 3) % images.length].url;
+    for (let k = 0; k < 4; k++) {
+      const item = images[(iIdx + k) % images.length];
+      const img = k === 0 ? image : k === 1 ? image2 : k === 2 ? image3 : image4;
+      const cap = k === 0 ? imageCaption : k === 1 ? imageCaption2 : k === 2 ? imageCaption3 : imageCaption4;
+      /* 重新觸發淡入動畫：先移除 class，reflow 後再加回 */
+      cap.classList.remove("caption-in");
+      img.src = item.url;
+      cap.textContent = titleFromName(item.name);
+      void cap.offsetWidth; /* 強制 reflow，讓動畫可重新播放 */
+      cap.classList.add("caption-in");
+    }
+  }
+
+  /** 由檔名取標題顯示（去副檔名、去開頭編號），與電視牆/books.js 相同邏輯 */
+  function titleFromName(name: string): string {
+    let t = String(name || "").replace(/\.[^.]+$/, "");
+    t = t.replace(/^\d+[\s._-]*/, "");
+    return t.trim() || String(name || "").replace(/\.[^.]+$/, "");
   }
 
   function stopTimer(): void {
