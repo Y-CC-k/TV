@@ -49,6 +49,7 @@
   /* ---------- 元素：好書介紹 ---------- */
   const bookServerSelect = $("bookServerSelect");
   const bookTitleInput = $("bookTitleInput");
+  const bookFileTypeRadios = document.querySelectorAll('input[name="bookFileType"]');
   const bookBtnSelectFile = $("bookBtnSelectFile");
   const bookFileInput = $("bookFileInput");
   const bookSelectedFile = $("bookSelectedFile");
@@ -620,7 +621,8 @@
       return;
     }
     const title = sanitizeBookTitle(bookTitleInput.value);
-    if (title && bookSelectedFiles.length > 1) {
+    const bookType = document.querySelector('input[name="bookFileType"]:checked').value || "book";
+    if (bookType === "book" && title && bookSelectedFiles.length > 1) {
       bookMsg.textContent = "提示：多張圖片時「書名」不套用，使用原檔名上傳";
       bookMsg.className = "msg";
     }
@@ -636,15 +638,15 @@
 
     for (let i = 0; i < bookSelectedFiles.length; i++) {
       const file = bookSelectedFiles[i];
-      /* 有填書名且只選一張圖 → 以書名當檔名（電視牆顯示的書名由檔名來） */
+      /* 有填書名且只選一張圖（且類型為好書介紹）→ 以書名當檔名 */
       let uploadName = file.name;
       const ext = (file.name.match(/\.[^.]+$/) || [""])[0];
-      if (title && bookSelectedFiles.length === 1) {
+      if (bookType === "book" && title && bookSelectedFiles.length === 1) {
         uploadName = title + (ext || ".jpg");
       }
       const formData = new FormData();
       formData.append("file", file, uploadName);
-      formData.append("type", "book");
+      formData.append("type", bookType);
 
       bookMsg.textContent = `上傳中 (${i + 1}/${bookSelectedFiles.length})：${file.name}`;
       bookProgressText.textContent = `${Math.round((i / bookSelectedFiles.length) * 100)}%`;
