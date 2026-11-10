@@ -38,6 +38,7 @@
   /* ---------- 元素：上傳 ---------- */
   const uploadServerSelect = $("uploadServerSelect");
   const uploadFileTypeRadios = document.querySelectorAll('input[name="uploadFileType"]');
+  const tvUploadAllServers = $("tvUploadAllServers");
   const uploadBtnSelectFile = $("uploadBtnSelectFile");
   const uploadFileInput = $("uploadFileInput");
   const uploadSelectedFile = $("uploadSelectedFile");
@@ -820,13 +821,48 @@
     uploadProgressText.textContent = "0%";
   });
 
+  async function uploadFileToServer(file, baseUrl, type) {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("type", type);
+
+    try {
+      const res = await fetch(`${baseUrl}/upload`, {
+        method: "POST",
+        body: formData,
+        signal: AbortSignal.timeout(300000),
+      });
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        throw new Error("HTTP " + res.status + (errText ? ": " + errText.slice(0, 200) : ""));
+      }
+      const result = await res.json();
+      if (result.ok && result.results) {
+        const r = result.results[0] || {};
+        if (r.ok) return { ok: true, name: r.name || file.name };
+        else return { ok: false, name: file.name, error: r.error || "失敗" };
+      } else {
+        return { ok: true, name: result.name || file.name };
+      }
+    } catch (err) {
+      return { ok: false, name: file.name, error: err.message };
+    }
+  }
+
   uploadBtnUpload.addEventListener("click", async () => {
     if (selectedFiles.length === 0) return;
-    if (!selectedServerId) {
+
+    const uploadAll = tvUploadAllServers.checked;
+    const type = document.querySelector('input[name="uploadFileType"]:checked').value;
+
+    if (!uploadAll && !selectedServerId) {
       await alertMsg("請先選擇公告機");
       return;
     }
-    const type = document.querySelector('input[name="uploadFileType"]:checked').value;
+
+    const targets = uploadAll
+      ? servers.filter((s) => s.ip && s.port).map((s) => `http://${s.ip}:${s.port}`)
+      : [currentBaseUrl];
 
     uploadMsg.textContent = "上傳中…";
     uploadMsg.className = "msg";
@@ -837,76 +873,49 @@
     let successCount = 0;
     let failCount = 0;
     const results = [];
+    let doneTasks = 0;
+    const totalTasks = selectedFiles.length * targets.length;
 
-    try {
-      for (let i = 0; i < selectedFiles.length; i++) {
-        const file = selectedFiles[i];
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("type", type);
-
-        uploadMsg.textContent = `上傳中 (${i + 1}/${selectedFiles.length})：${file.name}`;
-        uploadProgressText.textContent = `${Math.round(((i) / selectedFiles.length) * 100)}%`;
-
-        try {
-          const res = await fetch(`${currentBaseUrl}/upload`, {
-            method: "POST",
-            body: formData,
-            signal: AbortSignal.timeout(300000),
-          });
-          if (!res.ok) {
-            const errText = await res.text().catch(() => "");
-            throw new Error("HTTP " + res.status + (errText ? ": " + errText.slice(0, 200) : ""));
-          }
-          const result = await res.json();
-          if (result.ok && result.results) {
-            result.results.forEach((r) => {
-              if (r.ok) successCount++;
-              else failCount++;
-              results.push(r);
-            });
-          } else {
-            successCount++;
-            results.push({ ok: true, name: result.name || file.name });
-          }
-        } catch (err) {
+    for (const file of selectedFiles) {
+      for (const baseUrl of targets) {
+        const r = await uploadFileToServer(file, baseUrl, type);
+        doneTasks++;
+        if (r.ok) {
+          successCount++;
+          results.push({ ok: true, name: r.name, server: baseUrl });
+        } else {
           failCount++;
-          results.push({ ok: false, name: file.name, error: err.message });
+          results.push({ ok: false, name: r.name, error: r.error || "失敗", server: baseUrl });
         }
-
-        uploadProgress.value = Math.round(((i + 1) / selectedFiles.length) * 100);
-        uploadProgressText.textContent = `${Math.round(((i + 1) / selectedFiles.length) * 100)}%`;
+        uploadProgress.value = Math.round((doneTasks / totalTasks) * 100);
+        uploadProgressText.textContent = `${Math.round((doneTasks / totalTasks) * 100)}%`;
       }
-
-      const okList = results.filter((r) => r.ok).map((r) => r.name).join(", ");
-      const failList = results.filter((r) => !r.ok).map((r) => `${r.name}(${r.error || "失敗"})`).join(", ");
-
-      let msg = "";
-      if (failCount === 0) {
-        msg = `全部上傳成功（${successCount} 個）：${okList}`;
-        uploadMsg.className = "msg success";
-      } else if (successCount === 0) {
-        msg = `全部上傳失敗（${failCount} 個）：${failList}`;
-        uploadMsg.className = "msg error";
-      } else {
-        msg = `上傳完成：成功 ${successCount} 個，失敗 ${failCount} 個\n成功：${okList}\n失敗：${failList}`;
-        uploadMsg.className = "msg error";
-      }
-      uploadMsg.textContent = msg;
-
-      selectedFiles = [];
-      uploadFileInput.value = "";
-      uploadSelectedFile.textContent = "未選擇檔案";
-      uploadBtnUpload.disabled = true;
-
-      setTimeout(() => {
-        if (filesServerSelect.value === selectedServerId) loadFileList();
-      }, 1500);
-    } catch (err) {
-      uploadMsg.textContent = "上傳失敗：" + err.message;
-      uploadMsg.className = "msg error";
-      uploadBtnUpload.disabled = false;
     }
+
+    const okList = results.filter((r) => r.ok).map((r) => r.name).join(", ");
+    const failList = results.filter((r) => !r.ok).map((r) => `${r.name}(${r.error || "失敗"})`).join(", ");
+
+    let msg = "";
+    if (failCount === 0) {
+      msg = `全部上傳成功（${successCount} 個檔案）：${okList}`;
+      uploadMsg.className = "msg success";
+    } else if (successCount === 0) {
+      msg = `全部上傳失敗（${failCount} 個檔案）：${failList}`;
+      uploadMsg.className = "msg error";
+    } else {
+      msg = `上傳完成：成功 ${successCount} 個，失敗 ${failCount} 個\n成功：${okList}\n失敗：${failList}`;
+      uploadMsg.className = "msg error";
+    }
+    uploadMsg.textContent = msg;
+
+    selectedFiles = [];
+    uploadFileInput.value = "";
+    uploadSelectedFile.textContent = "未選擇檔案";
+    uploadBtnUpload.disabled = true;
+
+    setTimeout(() => {
+      if (!uploadAll && filesServerSelect.value === selectedServerId) loadFileList();
+    }, 1500);
   });
 
   /* ---------- 檔案清單 ---------- */

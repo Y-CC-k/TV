@@ -30,10 +30,10 @@
     <!-- 標籤列：兩個大分頁 -->
     <div class="tabs" role="tablist">
       <button type="button" class="tab tab--active" data-tab="tv" id="tabTv" role="tab" aria-selected="true">
-        <span class="tab-face">📺 電視牆</span>
+        <span class="tab-face">📺 精彩槺榔</span>
       </button>
       <button type="button" class="tab" data-tab="books" id="tabBooks" role="tab" aria-selected="false">
-        <span class="tab-face">📦 精密槺榔</span>
+        <span class="tab-face">📦 資料傳輸</span>
       </button>
       <button type="button" class="tab" data-tab="honor" id="tabHonor" role="tab" aria-selected="false">
         <span class="tab-face">🏆 榮譽榜</span>
@@ -64,6 +64,9 @@
               <label>類型:</label>
               <label class="radio-inline"><input type="radio" name="uploadFileType" value="image" checked /> 照片</label>
               <label class="radio-inline"><input type="radio" name="uploadFileType" value="video" /> 影片</label>
+            </div>
+            <div class="row type-row">
+              <label class="checkbox-inline"><input type="checkbox" id="tvUploadAllServers" /> 傳輸檔案至全部公告機</label>
             </div>
             <div class="row">
               <button id="uploadBtnSelectFile" class="btn-secondary">選擇檔案（可多選）</button>
@@ -357,7 +360,7 @@
               <label>顯示分頁:</label>
               <label class="radio-inline"><input type="checkbox" id="tabChkTv" checked /> 電視牆</label>
               <label class="radio-inline"><input type="checkbox" id="tabChkHonor" checked /> 榮譽榜</label>
-              <label class="radio-inline"><input type="checkbox" id="tabChkBooks" checked /> 精密槺榔</label>
+              <label class="radio-inline"><input type="checkbox" id="tabChkBooks" checked /> 資料傳輸</label>
               <label class="radio-inline"><input type="checkbox" id="tabChkCampus" checked /> 校園風雲</label>
               <label class="radio-inline"><input type="checkbox" id="tabChkHealth" checked /> 衛教宣導</label>
             </div>
