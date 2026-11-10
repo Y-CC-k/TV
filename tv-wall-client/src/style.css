@@ -472,11 +472,43 @@ select:focus {
   cursor: pointer;
   font-size: 14px;
   color: #b9c4d6;
+  width: auto;   /* 覆寫全域 label 的 width:110px，避免內容重疊 */
 }
 
 .radio-inline input {
   margin: 0;
   accent-color: #1a73e8;
+}
+
+/* ── 分頁標題：四欄格子排版（避免輸入框互相擠壓重疊） ── */
+.tabname-row {
+  align-items: stretch;
+}
+
+.tabname-grid {
+  flex: 1 1 100%;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px 14px;
+}
+
+.tabname-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.tabname-item .tabname-label {
+  width: auto;
+  font-size: 13px;
+  color: #b9c4d6;
+}
+
+.tabname-item input {
+  flex: none;      /* 覆寫全域 input 的 flex:1（在直欄排版中會吃掉高度） */
+  width: 100%;
+  min-width: 0;
 }
 
 /* ── 狀態 ── */

@@ -309,12 +309,26 @@
               <label class="radio-inline"><input type="checkbox" id="tabChkCampus" checked /> 校園風雲</label>
               <label class="radio-inline"><input type="checkbox" id="tabChkHealth" checked /> 衛教宣導</label>
             </div>
-            <div class="row type-row">
+            <div class="row type-row tabname-row">
               <label>分頁標題:</label>
-              <label class="radio-inline"><input type="text" id="tabNameTv" maxlength="20" placeholder="精彩槺榔" size="10" /></label>
-              <label class="radio-inline"><input type="text" id="tabNameBooks" maxlength="20" placeholder="好書介紹" size="10" /></label>
-              <label class="radio-inline"><input type="text" id="tabNameCampus" maxlength="20" placeholder="校園風雲" size="10" /></label>
-              <label class="radio-inline"><input type="text" id="tabNameHealth" maxlength="20" placeholder="衛教宣導" size="10" /></label>
+              <div class="tabname-grid">
+                <div class="tabname-item">
+                  <span class="tabname-label">📺 電視牆</span>
+                  <input type="text" id="tabNameTv" maxlength="20" placeholder="預設：精彩槺榔" />
+                </div>
+                <div class="tabname-item">
+                  <span class="tabname-label">📚 資料傳輸</span>
+                  <input type="text" id="tabNameBooks" maxlength="20" placeholder="預設：好書介紹" />
+                </div>
+                <div class="tabname-item">
+                  <span class="tabname-label">📰 校園風雲</span>
+                  <input type="text" id="tabNameCampus" maxlength="20" placeholder="預設：校園風雲" />
+                </div>
+                <div class="tabname-item">
+                  <span class="tabname-label">🏥 衛教宣導</span>
+                  <input type="text" id="tabNameHealth" maxlength="20" placeholder="預設：衛教宣導" />
+                </div>
+              </div>
             </div>
             <div class="hint">
               💡 分頁標題＝公告機上分頁按鈕顯示的名稱。留空時使用預設值：精彩槺榔／好書介紹／校園風雲／衛教宣導（榮譽榜固定為「積點排行」）。
