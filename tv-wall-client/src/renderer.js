@@ -66,6 +66,17 @@
   const tabNameBooks = $("tabNameBooks");
   const tabNameCampus = $("tabNameCampus");
   const tabNameHealth = $("tabNameHealth");
+  /* 顯示分頁勾選與類型分類的名稱（隨分頁標題變動） */
+  const tabLabelTv = $("tabLabelTv");
+  const tabLabelBooks = $("tabLabelBooks");
+  const tabLabelCampus = $("tabLabelCampus");
+  const tabLabelHealth = $("tabLabelHealth");
+  const typeLabelBook = $("typeLabelBook");
+  const typeLabelCampus = $("typeLabelCampus");
+  const typeLabelHealth = $("typeLabelHealth");
+  const typeLabelBook2 = $("typeLabelBook2");
+  const typeLabelCampus2 = $("typeLabelCampus2");
+  const typeLabelHealth2 = $("typeLabelHealth2");
   const btnApplyTabs = $("btnApplyTabs");
   const tabApplyMsg = $("tabApplyMsg");
   const newPasswordInput = $("newPasswordInput");
@@ -452,6 +463,29 @@
     return s ? { s, base: `http://${s.ip}:${s.port}` } : null;
   }
 
+  /* 分頁標題預設值（公告機未設定時使用） */
+  const DEFAULT_TAB_NAMES = { tv: "精彩槺榔", books: "好書介紹", campus: "校園風雲", health: "衛教宣導" };
+  let currentTabNames = { ...DEFAULT_TAB_NAMES };
+
+  /** 依分頁標題更新：顯示分頁勾選名稱、資料傳輸類型分類名稱、上傳區塊標題 */
+  function applyTabNamesToUi(names) {
+    const n = names || {};
+    const pick = (v, k) => (typeof v === "string" && v.trim() ? v.trim().slice(0, 20) : DEFAULT_TAB_NAMES[k]);
+    currentTabNames = { tv: pick(n.tv, "tv"), books: pick(n.books, "books"), campus: pick(n.campus, "campus"), health: pick(n.health, "health") };
+    /* 顯示分頁勾選（榮譽榜固定不變） */
+    tabLabelTv.textContent = currentTabNames.tv;
+    tabLabelBooks.textContent = currentTabNames.books;
+    tabLabelCampus.textContent = currentTabNames.campus;
+    tabLabelHealth.textContent = currentTabNames.health;
+    /* 資料傳輸的類型分類（影片／照片固定不變） */
+    typeLabelBook.textContent = currentTabNames.books;
+    typeLabelCampus.textContent = currentTabNames.campus;
+    typeLabelHealth.textContent = currentTabNames.health;
+    typeLabelBook2.textContent = currentTabNames.books;
+    typeLabelCampus2.textContent = currentTabNames.campus;
+    typeLabelHealth2.textContent = currentTabNames.health;
+  }
+
   async function loadTabVisibility() {
     const t = tabServerOrNull();
     if (!t) { tabApplyStatus("", false); return; }
@@ -471,6 +505,8 @@
       tabNameBooks.value = tn.books || "";
       tabNameCampus.value = tn.campus || "";
       tabNameHealth.value = tn.health || "";
+      /* 顯示分頁與類型分類的名稱跟著公告機的標題變動 */
+      applyTabNamesToUi(tn);
       tabApplyStatus("已讀取", false);
     } catch (err) {
       tabApplyStatus("讀取失敗：" + err.message, true);
@@ -510,8 +546,10 @@
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      if (data && data.ok) tabApplyStatus("已套用，公告機顯示即時更新", false);
-      else throw new Error((data && data.message) || "未知錯誤");
+      if (data && data.ok) {
+        applyTabNamesToUi(tabNames);
+        tabApplyStatus("已套用，公告機顯示即時更新", false);
+      } else throw new Error((data && data.message) || "未知錯誤");
     } catch (err) {
       tabApplyStatus("套用失敗：" + err.message, true);
     }
@@ -727,7 +765,8 @@
       const bookType = document.querySelector('input[name="bookFileType"]:checked').value || "book";
       /* 伺服器 /files 清單的鍵：video→videos、image→images、book→books */
       const typeKey = bookType === "video" ? "videos" : bookType === "image" ? "images" : bookType === "book" ? "books" : bookType;
-      const typeName = { video: "影片", image: "照片", book: "好書介紹", campus: "校園風雲", health: "衛教宣導" }[bookType] || bookType;
+      /* 名稱跟著分頁標題（影片／照片固定；book/campus/health 用公告機設定的名稱） */
+      const typeName = bookType === "video" ? "影片" : bookType === "image" ? "照片" : currentTabNames[bookType] || bookType;
       const files = data[typeKey] || [];
 
       bookListCount.textContent = files.length + " 個檔案";
@@ -1268,6 +1307,9 @@
     renderServerList();
     populateServerSelects();
     loadHonorSettingsIntoForm();
+
+    /* 啟動時先套用預設名稱（讀到公告機設定後會再更新） */
+    applyTabNamesToUi({});
 
     if (servers.length > 0 && !selectedServerId) {
       selectedServerId = servers[0].id;
