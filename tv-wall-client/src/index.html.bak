@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>電視牆用戶端上傳工具</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- 標題列（無邊框視窗，可拖曳） -->
+    <div class="titlebar" id="titlebar">
+      <div class="dots">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+      <div class="title">
+        <span class="title-face">電視牆用戶端</span>
+        <span class="title-url">公告機上傳工具</span>
+      </div>
+      <div class="win-controls">
+        <button type="button" id="btnWinMin" title="最小化">&#xE921;</button>
+        <button type="button" id="btnWinMax" title="最大化 / 還原">&#xE922;</button>
+        <button type="button" id="btnWinClose" title="關閉">&#xE711;</button>
+      </div>
+    </div>
+
+    <!-- 標籤列：兩個大分頁 -->
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab tab--active" data-tab="tv" id="tabTv" role="tab" aria-selected="true">
+        <span class="tab-face">📺 電視牆</span>
+      </button>
+      <button type="button" class="tab" data-tab="books" id="tabBooks" role="tab" aria-selected="false">
+        <span class="tab-face">📚 好書介紹</span>
+      </button>
+      <button type="button" class="tab" data-tab="honor" id="tabHonor" role="tab" aria-selected="false">
+        <span class="tab-face">🏆 榮譽榜</span>
+      </button>
+      <button type="button" class="tab" data-tab="query" id="tabQuery" role="tab" aria-selected="false">
+        <span class="tab-face">📊 積點查詢</span>
+      </button>
+      <button type="button" class="tab" data-tab="settings" id="tabSettings" role="tab" aria-selected="false">
+        <span class="tab-face">⚙️ 全部設置</span>
+      </button>
+    </div>
+
+    <!-- 內容區 -->
+    <div class="page">
+
+      <!-- ===== 大分頁一：電視牆 ===== -->
+      <div id="panelTv" class="page-body active">
+        <div class="panel-inner">
+
+          <!-- 子區塊：上傳檔案 -->
+          <section class="sub-panel" id="subUpload">
+            <div class="sub-header">上傳檔案</div>
+            <div class="row">
+              <label>選擇公告機:</label>
+              <select id="uploadServerSelect"></select>
+            </div>
+            <div class="row type-row">
+              <label>類型:</label>
+              <label class="radio-inline"><input type="radio" name="uploadFileType" value="image" checked /> 照片</label>
+              <label class="radio-inline"><input type="radio" name="uploadFileType" value="video" /> 影片</label>
+              <label class="radio-inline"><input type="radio" name="uploadFileType" value="book" /> 好書介紹</label>
+              <label class="radio-inline"><input type="radio" name="uploadFileType" value="campus" /> 校園風雲</label>
+              <label class="radio-inline"><input type="radio" name="uploadFileType" value="health" /> 衛教宣導</label>
+            </div>
+            <div class="row">
+              <button id="uploadBtnSelectFile" class="btn-secondary">選擇檔案（可多選）</button>
+              <span id="uploadSelectedFile" class="file-info">未選擇檔案</span>
+              <input type="file" id="uploadFileInput" multiple style="display: none;" />
+            </div>
+            <div class="row">
+              <button id="uploadBtnUpload" class="btn-primary" disabled>上傳到公告機</button>
+            </div>
+            <div class="row progress-row">
+              <progress id="uploadProgress" max="100" value="0"></progress>
+              <span id="uploadProgressText">0%</span>
+            </div>
+            <div class="row">
+              <span id="uploadMsg" class="msg"></span>
+            </div>
+            <div class="hint">
+              💡 上傳成功後，公告機電視牆會自動將新檔案加入播放輪替（無需按 r）。
+            </div>
+          </section>
+
+          <!-- 子區塊：檔案清單 -->
+          <section class="sub-panel" id="subFiles">
+            <div class="sub-header">公告機檔案清單</div>
+            <div class="row">
+              <label>選擇公告機:</label>
+              <select id="filesServerSelect"></select>
+              <button id="filesBtnRefresh" class="btn-secondary">重新整理</button>
+              <span id="filesListCount" class="count">0 個檔案</span>
+            </div>
+            <div id="filesList" class="file-list"></div>
+          </section>
+
+        </div>
+      </div>
+
+      <!-- ===== 大分頁：好書介紹 ===== -->
+      <div id="panelBooks" class="page-body hidden">
+        <div class="panel-inner">
+
+          <!-- 子區塊：上傳好書介紹 -->
+          <section class="sub-panel" id="subBookUpload">
+            <div class="sub-header">上傳好書介紹（圖片 ＋ 書名）</div>
+            <div class="row">
+              <label>選擇公告機:</label>
+              <select id="bookServerSelect"></select>
+            </div>
+            <div class="row">
+              <label>書名:</label>
+              <input type="text" id="bookTitleInput" placeholder="例如：小王子（多張圖片時留空用原檔名）" maxlength="60" />
+            </div>
+            <div class="row">
+              <button id="bookBtnSelectFile" class="btn-secondary">選擇圖片（可多選）</button>
+              <span id="bookSelectedFile" class="file-info">未選擇圖片</span>
+              <input type="file" id="bookFileInput" multiple accept="image/*" style="display: none;" />
+            </div>
+            <div class="row">
+              <button id="bookBtnUpload" class="btn-primary" disabled>上傳好書介紹</button>
+            </div>
+            <div class="row progress-row">
+              <progress id="bookProgress" max="100" value="0"></progress>
+              <span id="bookProgressText">0%</span>
+            </div>
+            <div class="row">
+              <span id="bookMsg" class="msg"></span>
+            </div>
+            <div class="hint">
+              💡 有填「書名」且只選一張圖時，該張圖片會以書名儲存（電視牆顯示的書名由檔名來出）。
+              上傳成功後，各台電視牆會在下一次同步（約 1 分鐘內）自動收到新的好書介紹。
+            </div>
+          </section>
+
+          <!-- 子區塊：好書介紹清單（表列） -->
+          <section class="sub-panel" id="subBookList">
+            <div class="sub-header">好書介紹清單</div>
+            <div class="row">
+              <button id="bookBtnRefresh" class="btn-secondary">重新整理</button>
+              <span id="bookListCount" class="count">0 本書</span>
+            </div>
+            <div id="bookTableWrap" class="book-table-wrap">
+              <table class="book-table">
+                <thead>
+                  <tr>
+                    <th class="col-thumb">縮圖</th>
+                    <th class="col-title">書名</th>
+                    <th class="col-file">檔名</th>
+                    <th class="col-size">大小</th>
+                    <th class="col-action">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="bookTableBody"></tbody>
+              </table>
+            </div>
+          </section>
+
+        </div>
+      </div>
+
+      <!-- ===== 大分頁二：榮譽榜 ===== -->
+      <div id="panelHonor" class="page-body hidden">
+        <div class="panel-inner">
+
+          <!-- 子區塊：學生加分 -->
+          <section class="sub-panel" id="subHonorAdd">
+            <div class="sub-header">學生加分</div>
+
+            <div class="row class-pick-row">
+              <label>班級勾選加分:</label>
+              <select id="addPointsClassSelect">
+                <option value="">-- 請選擇年級班級 --</option>
+              </select>
+              <button id="btnToggleAllStudents" class="btn-secondary">全選</button>
+              <span id="classSelectedCount" class="count">已勾選 0 位學生</span>
+            </div>
+            <div class="row">
+              <div id="classStudentList" class="class-student-list"></div>
+            </div>
+
+            <div class="row">
+              <label>單筆卡號/學號:</label>
+              <input type="text" id="addPointsCardId" placeholder="輸入卡號或學號（不選勾選名單時使用）" maxlength="12" />
+            </div>
+
+            <div class="add-points-zones">
+              <div class="add-points-zone" data-item="readBook">
+                <div class="zone-header">
+                  <span class="zone-title">📖 英文</span>
+                  <span class="zone-value" id="zoneValue-readBook">0</span> 分
+                </div>
+                <input type="range" id="addPoints-readBook" min="0" max="5" value="0" step="1" />
+              </div>
+              <div class="add-points-zone" data-item="read">
+                <div class="zone-header">
+                  <span class="zone-title">📚 閱讀</span>
+                  <span class="zone-value" id="zoneValue-read">0</span> 分
+                </div>
+                <input type="range" id="addPoints-read" min="0" max="5" value="0" step="1" />
+              </div>
+              <div class="add-points-zone" data-item="run">
+                <div class="zone-header">
+                  <span class="zone-title">🏃 跑步</span>
+                  <span class="zone-value" id="zoneValue-run">0</span> 分
+                </div>
+                <input type="range" id="addPoints-run" min="0" max="5" value="0" step="1" />
+              </div>
+              <div class="add-points-zone" data-item="honor">
+                <div class="zone-header">
+                  <span class="zone-title">🏆 榮譽</span>
+                  <span class="zone-value" id="zoneValue-honor">0</span> 分
+                </div>
+                <input type="range" id="addPoints-honor" min="0" max="5" value="0" step="1" />
+              </div>
+            </div>
+
+            <div class="row">
+              <button id="honorBtnAddPoints" class="btn-primary">確認加分</button>
+              <span id="addPointsMsg" class="msg"></span>
+            </div>
+          </section>
+
+        </div>
+      </div>
+
+      <!-- ===== 大分頁三：積點查詢 ===== -->
+      <div id="panelQuery" class="page-body hidden">
+        <div class="panel-inner panel-inner--query">
+
+          <div class="query-cols">
+
+          <!-- 左區：學生積點查詢（下拉選單在上、輸入框在次） -->
+          <section class="sub-panel" id="subHonorQuery">
+            <div class="sub-header">學生積點查詢</div>
+            <div class="row query-rank-controls">
+              <select id="rankModeSelect">
+                <option value="total">總排行</option>
+                <option value="monthly">月排行</option>
+              </select>
+              <select id="rankItemSelect">
+                <option value="readBook">英文</option>
+                <option value="read">閱讀</option>
+                <option value="run">跑步</option>
+                <option value="honor">榮譽</option>
+              </select>
+              <button id="rankBtnLoad" class="btn-primary">載入排行</button>
+            </div>
+            <div class="row">
+              <input type="text" id="honorQueryInput" placeholder="輸入卡號或學號" maxlength="12" />
+              <button id="honorBtnQuery" class="btn-primary">查詢</button>
+            </div>
+            <div class="row">
+              <div id="honorStudentInfo" class="student-info" style="display:none;">
+                <table class="result-table">
+                  <thead>
+                    <tr>
+                      <th>姓名</th>
+                      <th>英文</th>
+                      <th>閱讀</th>
+                      <th>跑步</th>
+                      <th>榮譽</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td id="honorStuName"></td>
+                      <td id="honorScoreA"></td>
+                      <td id="honorScoreB"></td>
+                      <td id="honorScoreC"></td>
+                      <td id="honorScoreD"></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div id="honorQueryMsg" class="msg"></div>
+            </div>
+          </section>
+
+          <!-- 右區：排行榜（僅表格） -->
+          <section class="sub-panel" id="subRanking">
+            <div class="sub-header rank-header">
+              <span class="rank-title">排行榜（前 15 名）</span>
+              <span id="rankMsg" class="msg"></span>
+            </div>
+            <div class="row">
+              <div id="rankResultWrap" class="student-info" style="display:none;">
+                <table class="rank-table">
+                  <thead>
+                    <tr>
+                      <th class="col-rank">排名</th>
+                      <th class="col-card">卡號</th>
+                      <th class="col-name">姓名</th>
+                      <th class="col-class">年班</th>
+                      <th class="col-points">分數</th>
+                    </tr>
+                  </thead>
+                  <tbody id="rankTbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ===== 大分頁四：全部設置 ===== -->
+      <div id="panelSettings" class="page-body hidden">
+        <div class="panel-inner">
+
+          <!-- 子區塊：公告機管理 -->
+          <section class="sub-panel" id="subServers">
+            <div class="sub-header">公告機列表</div>
+            <div class="row">
+              <input type="text" id="serverName" placeholder="公告機名稱（例如 辦公室公告機）" />
+              <input type="text" id="serverIp" placeholder="IP 位址（例如 192.168.1.100）" />
+              <input type="text" id="serverPort" value="8123" placeholder="Port" />
+              <button id="btnAddServer" class="btn-primary">新增</button>
+            </div>
+            <div id="serverList" class="server-list"></div>
+          </section>
+
+          <!-- 子區塊：密碼設定 -->
+          <section class="sub-panel" id="subPasswordConfig">
+            <div class="sub-header">開啟密碼</div>
+            <div class="row">
+              <label>新密碼:</label>
+              <input type="password" id="newPasswordInput" placeholder="輸入新密碼" />
+              <button id="btnEyePassword" class="btn-secondary" type="button" title="顯示密碼">👁</button>
+              <button id="btnSavePassword" class="btn-primary">儲存密碼</button>
+              <span id="passwordMsg" class="msg"></span>
+            </div>
+          </section>
+
+          <!-- 子區塊：分頁顯示設定 -->
+          <section class="sub-panel" id="subTabConfig">
+            <div class="sub-header">分頁顯示設定</div>
+            <div class="row">
+              <label>公告機:</label>
+              <select id="tabServerSelect"></select>
+            </div>
+            <div class="row type-row">
+              <label>顯示分頁:</label>
+              <label class="radio-inline"><input type="checkbox" id="tabChkTv" checked /> 電視牆</label>
+              <label class="radio-inline"><input type="checkbox" id="tabChkHonor" checked /> 榮譽榜</label>
+              <label class="radio-inline"><input type="checkbox" id="tabChkBooks" checked /> 好書介紹</label>
+              <label class="radio-inline"><input type="checkbox" id="tabChkCampus" checked /> 校園風雲</label>
+              <label class="radio-inline"><input type="checkbox" id="tabChkHealth" checked /> 衛教宣導</label>
+            </div>
+            <div class="row">
+              <button id="btnLoadTabs" class="btn-secondary">讀取目前設定</button>
+              <button id="btnApplyTabs" class="btn-primary">套用到公告機</button>
+              <span id="tabApplyMsg" class="msg"></span>
+            </div>
+          </section>
+
+          <!-- 子區塊：榮譽榜設定 -->
+          <section class="sub-panel" id="subHonorConfig">
+            <div class="sub-header">榮譽榜設定</div>
+            <div class="row">
+              <label>Supabase URL:</label>
+              <input type="text" id="honorSupabaseUrl" placeholder="https://xxxx.supabase.co" />
+            </div>
+            <div class="row">
+              <label>Publishable Key:</label>
+              <input type="text" id="honorPublishableKey" placeholder="sb_publishable_..." />
+            </div>
+            <div class="row">
+              <button id="honorBtnSaveConfig" class="btn-primary">儲存設定</button>
+              <span id="honorConnStatus" class="status offline">未設定</span>
+            </div>
+          </section>
+
+        </div>
+      </div>
+
+    </div>
+
+    <footer>© 2026 電視牆公告系統 &#8226; 用戶端上傳工具</footer>
+  </div>
+  <script src="renderer.js"></script>
+</body>
+</html>

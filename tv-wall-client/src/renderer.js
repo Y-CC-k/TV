@@ -708,7 +708,11 @@
 
   /* ---------- 檔案清單（表列） ---------- */
   async function loadBookList() {
-    if (!currentBaseUrl) return;
+    if (!currentBaseUrl) {
+      bookTableBody.innerHTML = "";
+      bookListCount.textContent = "0 個檔案";
+      return;
+    }
     try {
       const res = await fetch(`${currentBaseUrl}/files`, { signal: AbortSignal.timeout(5000) });
       if (!res.ok) throw new Error("無法取得清單 HTTP " + res.status);
