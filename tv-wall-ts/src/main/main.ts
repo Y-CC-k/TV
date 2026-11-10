@@ -97,6 +97,8 @@ interface FileConfig {
   defaultTab?: string;
   /** 各分頁顯示／隱藏（false＝隱藏；未填視為顯示） */
   tabs?: TabVisibility;
+  /** 各分頁的顯示標題（tabNames 區塊；空白＝用預設名稱） */
+  tabNames?: { tv?: string; books?: string; campus?: string; health?: string };
   /** 積點排行（榮譽系統）設定區塊 */
   honor?: HonorSettings;
 }
@@ -110,6 +112,8 @@ interface ResolvedConfig extends AppConfig {
   healthDir: string;
   serverMode: boolean;
   serverPort: number;
+  /** 各分頁的顯示標題（空白＝預設） */
+  tabNames: { tv: string; books: string; campus: string; health: string };
   /** 實際讀到的 config.json 完整路徑（找不到檔案時為空字串） */
   configPath: string;
 }
@@ -151,6 +155,19 @@ function resolveConfig(): ResolvedConfig {
   const campusDir = dir(raw.campusDir, "campus");
   const healthDir = dir(raw.healthDir, "health");
 
+  /* 分頁標題：未填或空白時用預設名稱 */
+  const tn = raw.tabNames && typeof raw.tabNames === "object" ? raw.tabNames : {};
+  const tabName = (value: string | undefined, fallback: string): string => {
+    const v = typeof value === "string" ? value.trim() : "";
+    return v ? v.slice(0, 20) : fallback;
+  };
+  const tabNames = {
+    tv: tabName(tn.tv, "精彩槺榔"),
+    books: tabName(tn.books, "好書介紹"),
+    campus: tabName(tn.campus, "校園風雲"),
+    health: tabName(tn.health, "衛教宣導"),
+  };
+
   return {
     configPath: readPath,
     videoDir,
@@ -179,6 +196,7 @@ function resolveConfig(): ResolvedConfig {
     serverMode: raw.serverMode ?? false,
     serverPort:
       typeof raw.serverPort === "number" && raw.serverPort > 0 ? raw.serverPort : 8123,
+    tabNames,
     defaultTab: raw.defaultTab === "honor" ? "honor" : "tv",
     tabs:
       raw.tabs && typeof raw.tabs === "object"
@@ -224,6 +242,7 @@ function publicConfig(c: ResolvedConfig): AppConfig {
     imageFit: c.imageFit,
     defaultTab: c.defaultTab,
     tabs: c.tabs,
+    tabNames: c.tabNames,
     honor: c.honor,
     localIP: localIPv4s()[0] ?? "",
   };
@@ -449,8 +468,20 @@ if (!gotLock) {
                 campus: raw.tabs ? raw.tabs.campus !== false : true,
                 health: raw.tabs ? raw.tabs.health !== false : true,
               };
+              /* 分頁標題：未填或空白用預設名稱（與 resolveConfig 相同規則） */
+              const tn = raw.tabNames && typeof raw.tabNames === "object" ? raw.tabNames : {};
+              const tabName = (value: string | undefined, fallback: string): string => {
+                const v = typeof value === "string" ? value.trim() : "";
+                return v ? v.slice(0, 20) : fallback;
+              };
+              const tabNames = {
+                tv: tabName(tn.tv, "精彩槺榔"),
+                books: tabName(tn.books, "好書介紹"),
+                campus: tabName(tn.campus, "校園風雲"),
+                health: tabName(tn.health, "衛教宣導"),
+              };
               if (win && !win.isDestroyed()) {
-                win.webContents.send("config-updated", { tabs, defaultTab: raw.defaultTab === "honor" ? "honor" : "tv" });
+                win.webContents.send("config-updated", { tabs, tabNames, defaultTab: raw.defaultTab === "honor" ? "honor" : "tv" });
               }
             } catch {
               /* 讀取失敗：略過 */

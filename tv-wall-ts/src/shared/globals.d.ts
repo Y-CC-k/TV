@@ -45,6 +45,8 @@ interface AppConfig {
   defaultTab: string;
   /** 各分頁顯示／隱藏（false＝隱藏；未填的 key 視為顯示） */
   tabs?: TabVisibility;
+  /** 各分頁的顯示標題（config.json 的 tabNames 區塊；未填的 key 用預設名稱） */
+  tabNames?: TabNames;
   /** 積點排行設定（有設定時才顯示該分頁） */
   honor?: HonorSettings;
   /** 本機區網 IPv4（顯示在畫面右上角） */
@@ -63,6 +65,18 @@ interface TabVisibility {
   campus?: boolean;
   /** 衛教宣導（預設 true） */
   health?: boolean;
+}
+
+/** 分頁標題（config.json 的 tabNames 區塊；空白＝用預設名稱） */
+interface TabNames {
+  /** 精彩槺榔（預設「精彩槺榔」） */
+  tv?: string;
+  /** 好書介紹（預設「好書介紹」） */
+  books?: string;
+  /** 校園風雲（預設「校園風雲」） */
+  campus?: string;
+  /** 衛教宣導（預設「衛教宣導」） */
+  health?: string;
 }
 
 /** 掃描結果 */

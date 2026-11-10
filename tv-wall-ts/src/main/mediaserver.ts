@@ -30,14 +30,36 @@ export interface MediaServerOptions {
   onUploaded?: () => void;
 }
 
-/** tabs：正規化分頁顯示設定（未填視為顯示；只允許 tv／honor／books 三個鍵） */
-function normalizeTabs(raw: unknown): { tv: boolean; honor: boolean; books: boolean } {
+/** tabs：正規化分頁顯示設定（未填視為顯示；允許 tv／honor／books／campus／health 五個鍵） */
+function normalizeTabs(raw: unknown): { tv: boolean; honor: boolean; books: boolean; campus: boolean; health: boolean } {
   const t = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
   return {
     tv: t.tv !== false,
     honor: t.honor !== false,
     books: t.books !== false,
+    campus: t.campus !== false,
+    health: t.health !== false,
   };
+}
+
+/** tabNames：正規化分頁標題（去頭尾空白、最長 20 字；空白鍵略過＝用預設名稱） */
+function normalizeTabNames(raw: unknown): { tv?: string; books?: string; campus?: string; health?: string } {
+  const t = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+  const norm = (v: unknown): string | undefined => {
+    if (typeof v !== "string") return undefined;
+    const s = v.trim().slice(0, 20);
+    return s || undefined;
+  };
+  const out: { tv?: string; books?: string; campus?: string; health?: string } = {};
+  const tv = norm(t.tv);
+  const books = norm(t.books);
+  const campus = norm(t.campus);
+  const health = norm(t.health);
+  if (tv) out.tv = tv;
+  if (books) out.books = books;
+  if (campus) out.campus = campus;
+  if (health) out.health = health;
+  return out;
 }
 
 const CONTENT_TYPES: Record<string, string> = {
@@ -308,7 +330,7 @@ export function startMediaServer(o: MediaServerOptions): void {
         }
         try {
           const raw = JSON.parse(fs.readFileSync(o.configPath, "utf8").replace(/^\uFEFF/, ""));
-          sendJson(res, { ok: true, tabs: normalizeTabs(raw.tabs) });
+          sendJson(res, { ok: true, tabs: normalizeTabs(raw.tabs), tabNames: normalizeTabNames(raw.tabNames) });
         } catch (e) {
           sendText(res, 500, "讀取 config.json 失敗：" + (e instanceof Error ? e.message : String(e)));
         }
@@ -329,7 +351,7 @@ export function startMediaServer(o: MediaServerOptions): void {
         });
         req.on("end", () => {
           try {
-            let body: { tabs?: unknown } = {};
+            let body: { tabs?: unknown; tabNames?: unknown } = {};
             try {
               body = JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}");
             } catch {
@@ -337,6 +359,7 @@ export function startMediaServer(o: MediaServerOptions): void {
               return;
             }
             const tabs = normalizeTabs(body.tabs);
+            const tabNames = normalizeTabNames(body.tabNames);
             let cfg: Record<string, unknown> = {};
             try {
               cfg = JSON.parse(fs.readFileSync(o.configPath as string, "utf8").replace(/^\uFEFF/, "")) || {};
@@ -344,9 +367,14 @@ export function startMediaServer(o: MediaServerOptions): void {
               /* 檔案不存在或解析失敗就整份重建 */
             }
             cfg.tabs = tabs;
+            /* 沒有傳 tabNames 欄位時不動到現有標題；有傳（可能為空物件）就整塊覆寫 */
+            if (typeof body.tabNames !== "undefined") {
+              if (Object.keys(tabNames).length === 0) delete cfg.tabNames;
+              else cfg.tabNames = tabNames;
+            }
             fs.writeFileSync(o.configPath as string, JSON.stringify(cfg, null, 2) + "\n", "utf8");
-            console.log(`[server] tabDisplay update: ${JSON.stringify(tabs)}`);
-            sendJson(res, { ok: true, tabs });
+            console.log(`[server] tabDisplay update: ${JSON.stringify(tabs)} tabNames=${JSON.stringify(tabNames)}`);
+            sendJson(res, { ok: true, tabs, tabNames });
           } catch (e) {
             sendText(res, 500, "寫入 config.json 失敗：" + (e instanceof Error ? e.message : String(e)));
           }
@@ -360,7 +388,7 @@ export function startMediaServer(o: MediaServerOptions): void {
         const b = o.booksDir ? await buildList(o.booksDir, IMAGE_EXTS) : [];
         const c = o.campusDir ? await buildList(o.campusDir, IMAGE_EXTS) : [];
         const h = o.healthDir ? await buildList(o.healthDir, IMAGE_EXTS) : [];
-        sendText(res, 200, `電視牆伺服器：${v.length} 個影片、${i.length} 張圖片、${b.length} 本好書介紹、${c.length} 則校園風雲、${h.length} 則衛教宣導\n影片資料夾：${o.videoDir}\n圖片資料夾：${o.imagesDir}\n好書介紹資料夾：${o.booksDir ?? "（未設定）"}\n校園風雲資料夾：${o.campusDir ?? "（未設定）"}\n衛教宣導資料夾：${o.healthDir ?? "（未設定）"}\n\nGET /files        列出所有可播放檔案（上傳工具介面用）\nGET /files/...    下載檔案\nPOST /upload      上傳檔案（multipart/form-data，欄位 file + type=video|image|book|campus|health）\nDELETE /files/:type/:name  刪除檔案\nGET /config       讀取分頁顯示設定\nPOST /config      更新分頁顯示設定（JSON：{ "tabs": { "tv": true, "honor": true, "books": true, "campus": true, "health": true } }）\n`);
+        sendText(res, 200, `電視牆伺服器：${v.length} 個影片、${i.length} 張圖片、${b.length} 本好書介紹、${c.length} 則校園風雲、${h.length} 則衛教宣導\n影片資料夾：${o.videoDir}\n圖片資料夾：${o.imagesDir}\n好書介紹資料夾：${o.booksDir ?? "（未設定）"}\n校園風雲資料夾：${o.campusDir ?? "（未設定）"}\n衛教宣導資料夾：${o.healthDir ?? "（未設定）"}\n\nGET /files        列出所有可播放檔案（上傳工具介面用）\nGET /files/...    下載檔案\nPOST /upload      上傳檔案（multipart/form-data，欄位 file + type=video|image|book|campus|health）\nDELETE /files/:type/:name  刪除檔案\nGET /config       讀取分頁顯示設定\nPOST /config      更新分頁顯示設定（JSON：{ "tabs": { "tv": true, "honor": true, "books": true, "campus": true, "health": true }, "tabNames": { "tv": "精彩槺榔", "books": "好書介紹", "campus": "校園風雲", "health": "衛教宣導" } }）\n`);
         return;
       }
 

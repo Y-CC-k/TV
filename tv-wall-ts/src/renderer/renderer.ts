@@ -28,6 +28,10 @@
   const tabBooks = $("tabBooks");
   const tabCampus = $("tabCampus");
   const tabHealth = $("tabHealth");
+  const tabNameTv = $("tabNameTv");
+  const tabNameBooks = $("tabNameBooks");
+  const tabNameCampus = $("tabNameCampus");
+  const tabNameHealth = $("tabNameHealth");
   const tvPage = $("tvPage");
   const honorPage = $("honorPage");
   const booksPage = $("booksPage");
@@ -87,6 +91,27 @@
       vis.push("tv");
     }
     if (!vis.includes(currentTab)) setTab(vis[0]);
+  }
+
+  /** 分頁標題預設值（config.json 的 tabNames 未填時使用） */
+  const DEFAULT_TAB_NAMES: Record<"tv" | "books" | "campus" | "health", string> = {
+    tv: "精彩槺榔",
+    books: "好書介紹",
+    campus: "校園風雲",
+    health: "衛教宣導",
+  };
+
+  /** 套用分頁標題（空白＝預設名稱） */
+  function applyTabNames(names?: { tv?: string; books?: string; campus?: string; health?: string }): void {
+    const n = names || {};
+    const pick = (v: string | undefined, k: "tv" | "books" | "campus" | "health"): string => {
+      const s = typeof v === "string" ? v.trim().slice(0, 20) : "";
+      return s || DEFAULT_TAB_NAMES[k];
+    };
+    tabNameTv.textContent = pick(n.tv, "tv");
+    tabNameBooks.textContent = pick(n.books, "books");
+    tabNameCampus.textContent = pick(n.campus, "campus");
+    tabNameHealth.textContent = pick(n.health, "health");
   }
 
   function stopAutoTabTimer(): void {
@@ -427,6 +452,9 @@
     const bootTabs = (cfg as Partial<AppConfig> & { tabs?: TabVisibility }).tabs;
     applyTabs(bootTabs);
 
+    /* 套用分頁標題（config.json 的 tabNames 區塊） */
+    applyTabNames((cfg as Partial<AppConfig> & { tabNames?: TabNames }).tabNames);
+
     updateLayout();
 
     /* 預設分頁：只選目前允許顯示的分頁 */
@@ -440,10 +468,11 @@
       updateLayout();
     }
 
-    /* config.json 變更時（由主程序的通知）即時套用分頁顯示 */
+    /* config.json 變更時（由主程序的通知）即時套用分頁顯示與標題 */
     tvwall.onConfigUpdated((ncfg) => {
       const nt = (ncfg as Partial<AppConfig> & { tabs?: TabVisibility }).tabs;
       applyTabs(nt);
+      applyTabNames((ncfg as Partial<AppConfig> & { tabNames?: TabNames }).tabNames);
     });
 
     /* tv-wall-client 上傳完成（/upload）時自動重掃（不用按 r） */

@@ -62,6 +62,10 @@
   const tabChkCampus = $("tabChkCampus");
   const tabChkHealth = $("tabChkHealth");
   const btnLoadTabs = $("btnLoadTabs");
+  const tabNameTv = $("tabNameTv");
+  const tabNameBooks = $("tabNameBooks");
+  const tabNameCampus = $("tabNameCampus");
+  const tabNameHealth = $("tabNameHealth");
   const btnApplyTabs = $("btnApplyTabs");
   const tabApplyMsg = $("tabApplyMsg");
   const newPasswordInput = $("newPasswordInput");
@@ -461,6 +465,12 @@
       tabChkBooks.checked = tabs.books !== false;
       tabChkCampus.checked = tabs.campus !== false;
       tabChkHealth.checked = tabs.health !== false;
+      /* 分頁標題：有設定就填入，沒設定留空（placeholder 顯示預設值） */
+      const tn = (data && data.tabNames) || {};
+      tabNameTv.value = tn.tv || "";
+      tabNameBooks.value = tn.books || "";
+      tabNameCampus.value = tn.campus || "";
+      tabNameHealth.value = tn.health || "";
       tabApplyStatus("已讀取", false);
     } catch (err) {
       tabApplyStatus("讀取失敗：" + err.message, true);
@@ -483,12 +493,19 @@
       campus: tabChkCampus.checked,
       health: tabChkHealth.checked,
     };
+    /* 分頁標題：去頭尾空白；空白＝沿用預設名稱 */
+    const tabNames = {
+      tv: tabNameTv.value.trim().slice(0, 20),
+      books: tabNameBooks.value.trim().slice(0, 20),
+      campus: tabNameCampus.value.trim().slice(0, 20),
+      health: tabNameHealth.value.trim().slice(0, 20),
+    };
     /* Content-Type 用 text/plain 以避開跨來源預檢請求（伺服器只解析 JSON 內容） */
     try {
       const res = await fetch(`${t.base}/config`, {
         method: "POST",
         headers: { "Content-Type": "text/plain" },
-        body: JSON.stringify({ tabs }),
+        body: JSON.stringify({ tabs, tabNames }),
         signal: AbortSignal.timeout(5000),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
