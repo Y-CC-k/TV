@@ -585,8 +585,14 @@
       currentBaseUrl = "";
       bookBtnUpload.disabled = true;
       bookTableBody.innerHTML = "";
-      bookListCount.textContent = "0 本書";
+      bookListCount.textContent = "0 個檔案";
     }
+  });
+
+  bookFileTypeRadios.forEach((radio) => {
+    radio.addEventListener("change", () => {
+      loadBookList();
+    });
   });
 
   bookBtnSelectFile.addEventListener("click", () => bookFileInput.click());
@@ -700,30 +706,34 @@
     loadBookList();
   });
 
-  /* ---------- 好書介紹：清單（表列） ---------- */
+  /* ---------- 檔案清單（表列） ---------- */
   async function loadBookList() {
     if (!currentBaseUrl) return;
     try {
       const res = await fetch(`${currentBaseUrl}/files`, { signal: AbortSignal.timeout(5000) });
       if (!res.ok) throw new Error("無法取得清單 HTTP " + res.status);
       const data = await res.json();
-      const books = data.books || [];
 
-      bookListCount.textContent = books.length + " 本書";
+      const bookType = document.querySelector('input[name="bookFileType"]:checked').value || "book";
+      const typeKey = bookType === "book" ? "books" : bookType;
+      const typeName = bookType === "book" ? "好書介紹" : bookType === "campus" ? "校園風雲" : "衛教宣導";
+      const files = data[typeKey] || [];
+
+      bookListCount.textContent = files.length + " 個檔案";
       bookTableBody.innerHTML = "";
 
-      if (books.length === 0) {
+      if (files.length === 0) {
         bookTableBody.innerHTML =
-          '<tr><td colspan="5" style="color:#94a3b8;padding:24px;text-align:center;">公告機上沒有好書介紹，請先用上方上傳</td></tr>';
+          `<tr><td colspan="5" style="color:#94a3b8;padding:24px;text-align:center;">公告機上沒有${typeName}檔案，請先用上方上傳</td></tr>`;
         return;
       }
 
-      books.sort((a, b) => a.name.localeCompare(b.name, "zh-Hant"));
+      files.sort((a, b) => a.name.localeCompare(b.name, "zh-Hant"));
 
-      books.forEach((f) => {
+      files.forEach((f) => {
         const tr = document.createElement("tr");
         tr.innerHTML =
-          `<td class="col-thumb"><img class="book-thumb" src="${currentBaseUrl}/files/books/${encodeURIComponent(f.name)}" alt="" /></td>` +
+          `<td class="col-thumb"><img class="book-thumb" src="${currentBaseUrl}/files/${typeKey}/${encodeURIComponent(f.name)}" alt="" /></td>` +
           `<td class="col-title">${esc(bookTitleFromName(f.name))}</td>` +
           `<td class="col-file">${esc(f.name)}</td>` +
           `<td class="col-size">${(f.size / 1024).toFixed(0)} KB</td>` +
@@ -737,7 +747,7 @@
           if (!(await confirmMsg(`確定要刪除「${bookTitleFromName(name)}」嗎？`))) return;
           try {
             const delRes = await fetch(
-              `${currentBaseUrl}/files/books/${encodeURIComponent(name)}`,
+              `${currentBaseUrl}/files/${typeKey}/${encodeURIComponent(name)}`,
               { method: "DELETE", signal: AbortSignal.timeout(10000) },
             );
             if (!delRes.ok) throw new Error("刪除失敗 HTTP " + delRes.status);
