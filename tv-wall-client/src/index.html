@@ -88,16 +88,29 @@
             </div>
           </section>
 
-          <!-- 子區塊：檔案清單 -->
+          <!-- 子區塊：檔案清單（表列） -->
           <section class="sub-panel" id="subFiles">
-            <div class="sub-header">公告機檔案清單</div>
+            <div class="sub-header">檔案清單</div>
             <div class="row">
               <label>選擇公告機:</label>
               <select id="filesServerSelect"></select>
               <button id="filesBtnRefresh" class="btn-secondary">重新整理</button>
               <span id="filesListCount" class="count">0 個檔案</span>
             </div>
-            <div id="filesList" class="file-list"></div>
+            <div id="filesTableWrap" class="book-table-wrap">
+              <table class="book-table">
+                <thead>
+                  <tr>
+                    <th class="col-thumb">縮圖</th>
+                    <th class="col-title">類型</th>
+                    <th class="col-file">檔名</th>
+                    <th class="col-size">大小</th>
+                    <th class="col-action">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="filesTableBody"></tbody>
+              </table>
+            </div>
           </section>
 
         </div>

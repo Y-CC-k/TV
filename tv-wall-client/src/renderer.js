@@ -68,7 +68,7 @@
   const filesServerSelect = $("filesServerSelect");
   const filesBtnRefresh = $("filesBtnRefresh");
   const filesListCount = $("filesListCount");
-  const filesList = $("filesList");
+  const filesTableBody = $("filesTableBody");
 
   /* ---------- 元素：榮譽榜設定 ---------- */
   const honorSupabaseUrl = $("honorSupabaseUrl");
@@ -572,7 +572,7 @@
       loadFileList();
     } else {
       currentBaseUrl = "";
-      filesList.innerHTML = "";
+      filesTableBody.innerHTML = "";
       filesListCount.textContent = "0 個檔案";
     }
   });
@@ -918,9 +918,13 @@
     }, 1500);
   });
 
-  /* ---------- 檔案清單 ---------- */
+  /* ---------- 檔案清單（表列，與資料傳輸分頁同款） ---------- */
   async function loadFileList() {
-    if (!currentBaseUrl) return;
+    if (!currentBaseUrl) {
+      filesTableBody.innerHTML = "";
+      filesListCount.textContent = "0 個檔案";
+      return;
+    }
     try {
       const res = await fetch(`${currentBaseUrl}/files`, { signal: AbortSignal.timeout(5000) });
       if (!res.ok) throw new Error("無法取得清單 HTTP " + res.status);
@@ -929,48 +933,51 @@
       const videos = data.videos || [];
       const images = data.images || [];
       const books = data.books || [];
-       const campus = data.campus || [];
-       const health = data.health || [];
-       const allFiles = [...videos, ...images, ...books, ...campus, ...health];
+      const campus = data.campus || [];
+      const health = data.health || [];
+      const allFiles = [...videos, ...images, ...books, ...campus, ...health];
 
-      filesList.innerHTML = "";
       filesListCount.textContent = allFiles.length + " 個檔案";
+      filesTableBody.innerHTML = "";
+
+      const typeNameMap = { video: "影片", image: "照片", book: "好書介紹", campus: "校園風雲", health: "衛教宣導" };
 
       if (allFiles.length === 0) {
-        filesList.innerHTML = '<div style="padding:16px;color:#94a3b8;text-align:center;">無檔案</div>';
+        filesTableBody.innerHTML =
+          `<tr><td colspan="5" style="color:#94a3b8;padding:24px;text-align:center;">公告機上沒有檔案，請先用上方上傳</td></tr>`;
         return;
       }
 
       allFiles.sort((a, b) => {
         if (a.type !== b.type) {
-           const order = { video: 0, image: 1, book: 2, campus: 3, health: 4 };
+          const order = { video: 0, image: 1, book: 2, campus: 3, health: 4 };
           return (order[a.type] ?? 9) - (order[b.type] ?? 9);
         }
-        return a.name.localeCompare(b.name);
+        return a.name.localeCompare(b.name, "zh-Hant");
       });
 
       for (const f of allFiles) {
-        const div = document.createElement("div");
-        div.className = "file-item";
-           const typeLabel = f.type === "video" ? "🎬" : f.type === "book" ? "📘" : f.type === "campus" ? "📰" : f.type === "health" ? "🏥" : "🖼";
-        div.innerHTML = `
-          <div>
-            <span class="file-name">${typeLabel} ${esc(f.name)}</span>
-            <span class="file-size">${(f.size / 1024 / 1024).toFixed(2)} MB</span>
-          </div>
-          <div class="file-actions">
-            <button data-type="${f.type}" data-name="${esc(f.name)}">刪除</button>
-          </div>
-        `;
-        filesList.appendChild(div);
+        const tr = document.createElement("tr");
+        /* 影片無縮圖 → 用 🎬 佔位；其餘皆有圖可當縮圖 */
+        const thumbSrc = f.type === "video" ? "" : `${currentBaseUrl}/files/${type2Dir(f.type)}/${encodeURIComponent(f.name)}`;
+        const thumbHtml = f.type === "video"
+          ? `<span style="font-size:36px;line-height:64px;">🎬</span>`
+          : `<img class="book-thumb" src="${thumbSrc}" alt="" />`;
+        tr.innerHTML =
+          `<td class="col-thumb">${thumbHtml}</td>` +
+          `<td class="col-title">${typeNameMap[f.type] || f.type}</td>` +
+          `<td class="col-file">${esc(f.name)}</td>` +
+          `<td class="col-size">${f.type === "video" ? (f.size / 1024 / 1024).toFixed(2) + " MB" : (f.size / 1024).toFixed(0) + " KB"}</td>` +
+          `<td class="col-action book-actions"><button data-type="${f.type}" data-name="${esc(f.name)}">刪除</button></td>`;
+        filesTableBody.appendChild(tr);
       }
 
-      filesList.querySelectorAll("button").forEach((btn) => {
+      filesTableBody.querySelectorAll("button").forEach((btn) => {
         btn.addEventListener("click", async () => {
           const type = btn.getAttribute("data-type");
           const name = btn.getAttribute("data-name");
-          if (!(await confirmMsg(`確定要刪除 ${name} 嗎？`))) return;
-           const delType = type === "video" ? "videos" : type === "book" ? "books" : type === "campus" ? "campus" : type === "health" ? "health" : "images";
+          if (!(await confirmMsg(`確定要刪除「${name}」嗎？`))) return;
+          const delType = type === "video" ? "videos" : type === "book" ? "books" : type === "campus" ? "campus" : type === "health" ? "health" : "images";
           try {
             const delRes = await fetch(`${currentBaseUrl}/files/${delType}/${encodeURIComponent(name)}`, {
               method: "DELETE",
@@ -984,8 +991,14 @@
         });
       });
     } catch (err) {
-      filesList.innerHTML = `<div style="padding:16px;color:#f87171;text-align:center;">載入失敗：${err.message}</div>`;
+      filesTableBody.innerHTML =
+        `<tr><td colspan="5" style="color:#f87171;padding:24px;text-align:center;">載入失敗：${esc(err.message)}</td></tr>`;
     }
+  }
+
+  /* type → 伺服器檔案目錄名（API 呼叫用） */
+  function type2Dir(type) {
+    return type === "video" ? "videos" : type === "book" ? "books" : type === "campus" ? "campus" : type === "health" ? "health" : "images";
   }
 
   filesBtnRefresh.addEventListener("click", loadFileList);
