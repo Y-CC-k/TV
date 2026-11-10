@@ -65,7 +65,6 @@
   const bookTableWrap = $("bookTableWrap");
 
   /* ---------- 元素：檔案清單 ---------- */
-  const filesServerSelect = $("filesServerSelect");
   const filesBtnRefresh = $("filesBtnRefresh");
   const filesListCount = $("filesListCount");
   const filesTableBody = $("filesTableBody");
@@ -527,7 +526,7 @@
 
   /* 填入下拉選單（上傳 / 檔案清單 / 好書介紹 / 分頁顯示設定） */
   function populateServerSelects() {
-    [uploadServerSelect, filesServerSelect, bookServerSelect, tabServerSelect].forEach((sel) => {
+    [uploadServerSelect, bookServerSelect, tabServerSelect].forEach((sel) => {
       sel.innerHTML = '<option value="">-- 請選擇公告機 --</option>';
       servers.forEach((s) => {
         const opt = document.createElement("option");
@@ -539,7 +538,6 @@
 
     if (selectedServerId) {
       uploadServerSelect.value = selectedServerId;
-      filesServerSelect.value = selectedServerId;
       bookServerSelect.value = selectedServerId;
       tabServerSelect.value = selectedServerId;
       loadServerInfo(selectedServerId);
@@ -559,21 +557,12 @@
     selectedServerId = e.target.value || null;
     if (selectedServerId) {
       loadServerInfo(selectedServerId);
-    } else {
-      currentBaseUrl = "";
-      uploadBtnUpload.disabled = true;
-    }
-  });
-
-  filesServerSelect.addEventListener("change", (e) => {
-    selectedServerId = e.target.value || null;
-    if (selectedServerId) {
-      loadServerInfo(selectedServerId);
       loadFileList();
     } else {
       currentBaseUrl = "";
       filesTableBody.innerHTML = "";
       filesListCount.textContent = "0 個檔案";
+      uploadBtnUpload.disabled = true;
     }
   });
 
@@ -914,7 +903,7 @@
     uploadBtnUpload.disabled = true;
 
     setTimeout(() => {
-      if (!uploadAll && filesServerSelect.value === selectedServerId) loadFileList();
+      if (!uploadAll) loadFileList();
     }, 1500);
   });
 
@@ -932,15 +921,13 @@
 
       const videos = data.videos || [];
       const images = data.images || [];
-      const books = data.books || [];
-      const campus = data.campus || [];
-      const health = data.health || [];
-      const allFiles = [...videos, ...images, ...books, ...campus, ...health];
+      /* 只顯示電視牆內容：影片 + 照片（好書介紹／校園風雲／衛教宣導在資料傳輸分頁管理） */
+      const allFiles = [...videos, ...images];
 
       filesListCount.textContent = allFiles.length + " 個檔案";
       filesTableBody.innerHTML = "";
 
-      const typeNameMap = { video: "影片", image: "照片", book: "好書介紹", campus: "校園風雲", health: "衛教宣導" };
+      const typeNameMap = { video: "影片", image: "照片" };
 
       if (allFiles.length === 0) {
         filesTableBody.innerHTML =
@@ -950,7 +937,7 @@
 
       allFiles.sort((a, b) => {
         if (a.type !== b.type) {
-          const order = { video: 0, image: 1, book: 2, campus: 3, health: 4 };
+          const order = { video: 0, image: 1 };
           return (order[a.type] ?? 9) - (order[b.type] ?? 9);
         }
         return a.name.localeCompare(b.name, "zh-Hant");
@@ -1477,10 +1464,12 @@
     if (servers.length > 0 && !selectedServerId) {
       selectedServerId = servers[0].id;
       uploadServerSelect.value = selectedServerId;
-      filesServerSelect.value = selectedServerId;
       loadServerInfo(selectedServerId);
     }
 
     uploadBtnUpload.disabled = true;
+
+    /* 啟動時自動載入精彩槺榔檔案清單（已依上方公告機選擇連動） */
+    if (selectedServerId) loadFileList();
   })();
 })();
