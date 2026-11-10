@@ -3,3 +3,5 @@ tv-wall-ts/config.portable.json
 tv-wall-ts/config.server.json
 tv-wall-ts/state.json
 tv-wall-client/config.json
+tv-wall-client/client.log
+tv-wall-ts/client.log
