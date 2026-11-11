@@ -105,7 +105,6 @@
 
   function saveServers() {
     localStorage.setItem("tvwall_servers", JSON.stringify(servers));
-    /* 同步寫回 exe 旁邊的 config.json（只寫 servers 欄位；honor 等其他設定保留） */
     try {
       const flat = servers.map((s) => ({
         name: s.name,
@@ -814,10 +813,9 @@
 
   /* ---------- 初始化 ---------- */
 
-  /* exe 旁邊的 config.json：提供預設公告機清單與積點排行 Supabase 設定
-     { "servers": [{ "name": "…", "ip": "…", "port": 8123 }],
-       "honor":   { "supabaseUrl": "…", "publishableKey": "…" } }
-     檔案內的 honor 設定優先於 UI／localStorage；公告機則是「加入不重複的」。 */
+  /* exe 旁邊的 config.json：提供預設公告機清單
+     { "servers": [{ "name": "…", "ip": "…", "port": 8123 }] }
+     公告機則是「加入不重複的」。 */
   (async () => {
     try {
       const boot = await tvwallClient.getBootConfig();
