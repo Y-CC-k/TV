@@ -480,6 +480,23 @@ select:focus {
   accent-color: #1a73e8;
 }
 
+/* ── 全部公告機勾選：單行不換行 ── */
+.checkbox-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #b9c4d6;
+  width: auto;        /* 覆寫全域 label 的 width:110px */
+  white-space: nowrap; /* 不換行 */
+}
+
+.checkbox-inline input {
+  margin: 0;
+  accent-color: #1a73e8;
+}
+
 /* ── 分頁標題：四欄格子排版（避免輸入框互相擠壓重疊） ── */
 .tabname-row {
   align-items: stretch;
