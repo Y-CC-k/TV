@@ -254,6 +254,7 @@ export function startMediaServer(o: MediaServerOptions): void {
               : fileType === "book" ? o.booksDir
               : fileType === "campus" ? o.campusDir
               : fileType === "health" ? o.healthDir
+               : fileType === "counseling" ? o.counselingDir
               : o.imagesDir;
             const allowedExts = fileType === "image" || fileType === "book" || fileType === "campus" || fileType === "health" || fileType === "counseling" ? IMAGE_EXTS : VIDEO_EXTS;
 
