@@ -110,23 +110,29 @@
     els.dots.innerHTML = html;
   }
 
-  function sidebarSix() {
-    /* 4+4 小卡：不足時循環重複填滿 */
-    if (items.length === 0) return [];
-    var take = Math.min(4, items.length);
-    var start = items.length - take;
-    var base = items.slice(start).map(function (it, i) { return { item: it, idx: start + i }; });
+  var sidebarList = [];           // 目前的側邊小卡清單（隨機 8 張）
+
+  /** 側邊小卡：隨機挑選 8 張（不足 8 張時循環重複補滿；洗牌只在清單更新或進入分頁時重抽） */
+  function refreshSidebarList() {
+    if (items.length === 0) { sidebarList = []; return; }
+    var pool = items.map(function (it, i) { return { item: it, idx: i }; });
+    /* Fisher–Yates 洗牌 */
+    for (var i = pool.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
+    }
+    var base = pool.slice(0, Math.min(8, pool.length));
     var out = [];
     while (out.length < 8 && base.length > 0) {
       var e = base[out.length % base.length];
       out.push({ item: e.item, idx: e.idx });
     }
-    return out;
+    sidebarList = out;
   }
 
   function renderSidebar() {
     if (!bound) return;
-    var six = sidebarSix();
+    var six = sidebarList;
     var left = six.slice(0, 4);
     var right = six.slice(4, 8);
     [ { root: els.sidebarStart, list: left }, { root: els.sidebarEnd, list: right } ].forEach(function (g) {
@@ -202,6 +208,7 @@
       bindDom();
       items = Array.isArray(newItems) ? newItems : [];
       if (idx >= items.length) idx = 0;
+      refreshSidebarList();
       show();
       if (els.page && !els.page.classList.contains("hidden")) startTimer();
     },
@@ -209,6 +216,7 @@
     /** 分頁切換到「好書介紹」 */
     onShow: function () {
       bindDom();
+      refreshSidebarList();
       show();
       startTimer();
     },
