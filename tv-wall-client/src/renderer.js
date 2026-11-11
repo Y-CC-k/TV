@@ -1,4 +1,4 @@
-(async () => {
+﻿(async () => {
   "use strict";
 
   const $ = (id) => document.getElementById(id);
@@ -10,19 +10,11 @@
   let bookSelectedFiles = []; // File[] 多個選中的檔案
 
   /* ---------- 榮譽榜狀態 ---------- */
-  let honorSettings = {
-    supabaseUrl: localStorage.getItem("tvwall_honor_supabaseUrl") || "",
-    publishableKey: localStorage.getItem("tvwall_honor_publishableKey") || "",
-  };
 
   /* ---------- 元素：大分頁 ---------- */
   const tabBooks = $("tabBooks");
-  const tabHonor = $("tabHonor");
-  const tabQuery = $("tabQuery");
   const tabSettings = $("tabSettings");
   const panelBooks = $("panelBooks");
-  const panelHonor = $("panelHonor");
-  const panelQuery = $("panelQuery");
   const panelSettings = $("panelSettings");
 
   /* ---------- 元素：公告機管理 ---------- */
@@ -51,13 +43,8 @@
   const bookTableWrap = $("bookTableWrap");
 
   /* ---------- 元素：榮譽榜設定 ---------- */
-  const honorSupabaseUrl = $("honorSupabaseUrl");
-  const honorPublishableKey = $("honorPublishableKey");
-  const honorBtnSaveConfig = $("honorBtnSaveConfig");
-  const honorConnStatus = $("honorConnStatus");
   const tabServerSelect = $("tabServerSelect");
   const tabChkTv = $("tabChkTv");
-  const tabChkHonor = $("tabChkHonor");
   const tabChkBooks = $("tabChkBooks");
   const tabChkCampus = $("tabChkCampus");
   const tabChkHealth = $("tabChkHealth");
@@ -98,19 +85,9 @@
   $("titlebar").addEventListener("dblclick", () => window.tvwallClient.windowMaximize && window.tvwallClient.windowMaximize());
 
   /* ---------- 元素：學生積點查詢 ---------- */
-  const honorQueryInput = $("honorQueryInput");
-  const honorBtnQuery = $("honorBtnQuery");
-  const honorStudentInfo = $("honorStudentInfo");
-  const honorStuName = $("honorStuName");
-  const honorScoreA = $("honorScoreA");
-  const honorScoreB = $("honorScoreB");
-  const honorScoreC = $("honorScoreC");
-  const honorScoreD = $("honorScoreD");
-  const honorQueryMsg = $("honorQueryMsg");
 
   /* ---------- 元素：學生加分 ---------- */
   const addPointsCardId = $("addPointsCardId");
-  const honorBtnAddPoints = $("honorBtnAddPoints");
   const addPointsMsg = $("addPointsMsg");
 
   /* ---------- 元素：學生加分（班級勾選） ---------- */
@@ -327,34 +304,23 @@
 
   /* ---------- 大分頁切換 ---------- */
   function switchTab(tab) {
-    [tabBooks, tabHonor, tabQuery, tabSettings].forEach((t) => {
+    [tabBooks, tabSettings].forEach((t) => {
       t.classList.remove("tab--active");
       t.setAttribute("aria-selected", "false");
     });
-    [panelBooks, panelHonor, panelQuery, panelSettings].forEach((p) => p.classList.add("hidden"));
+    [panelBooks, panelSettings].forEach((p) => p.classList.add("hidden"));
     tab.classList.add("tab--active");
     tab.setAttribute("aria-selected", "true");
 
     if (tab === tabBooks) {
       panelBooks.classList.remove("hidden");
       loadBookList();
-    } else if (tab === tabHonor) {
-      panelHonor.classList.remove("hidden");
-      loadHonorSettingsIntoForm();
-      populateClassSelect();
-    } else if (tab === tabQuery) {
-      panelQuery.classList.remove("hidden");
-      loadHonorSettingsIntoForm();
-      loadRanking();
     } else if (tab === tabSettings) {
       panelSettings.classList.remove("hidden");
-      loadHonorSettingsIntoForm();
     }
   }
 
   tabBooks.addEventListener("click", () => switchTab(tabBooks));
-  tabHonor.addEventListener("click", () => switchTab(tabHonor));
-  tabQuery.addEventListener("click", () => switchTab(tabQuery));
   tabSettings.addEventListener("click", () => switchTab(tabSettings));
 
   /* ---------- 公告機管理 ---------- */
@@ -502,7 +468,6 @@
       const data = await res.json();
       const tabs = (data && data.tabs) || {};
       tabChkTv.checked = tabs.tv !== false;
-      tabChkHonor.checked = tabs.honor !== false;
       tabChkBooks.checked = tabs.books !== false;
       tabChkCampus.checked = tabs.campus !== false;
       tabChkHealth.checked = tabs.health !== false;
@@ -533,7 +498,6 @@
     if (!t) { tabApplyStatus("請先選擇公告機", true); return; }
     const tabs = {
       tv: tabChkTv.checked,
-      honor: tabChkHonor.checked,
       books: tabChkBooks.checked,
       campus: tabChkCampus.checked,
       health: tabChkHealth.checked,
@@ -848,431 +812,6 @@
     }
   }
 
-  /* ---------- 榮譽榜設定 ---------- */
-  function loadHonorSettingsIntoForm() {
-    honorSupabaseUrl.value = honorSettings.supabaseUrl;
-    honorPublishableKey.value = honorSettings.publishableKey;
-    updateHonorConnStatus();
-  }
-
-  function saveHonorSettings() {
-    honorSettings = {
-      supabaseUrl: honorSupabaseUrl.value.trim(),
-      publishableKey: honorPublishableKey.value.trim(),
-    };
-    localStorage.setItem("tvwall_honor_supabaseUrl", honorSettings.supabaseUrl);
-    localStorage.setItem("tvwall_honor_publishableKey", honorSettings.publishableKey);
-    /* 檔案裡的 honor 會覆蓋 UI，這裡同步寫回 config.json，兩邊一致 */
-    try {
-      const r = tvwallClient.saveBootConfig({ honor: honorSettings });
-      r.then((res) => {
-        if (res && !res.ok) console.warn("[config.json] 寫入失敗：", res.error);
-      });
-    } catch (err) {
-      console.warn("[config.json] 寫入失敗：", err);
-    }
-    updateHonorConnStatus();
-    honorQueryMsg.textContent = "設定已儲存";
-    honorQueryMsg.className = "msg success";
-    setTimeout(() => { honorQueryMsg.textContent = ""; }, 2000);
-  }
-
-  function updateHonorConnStatus() {
-    const hasConfig = !!honorSettings.supabaseUrl && !!honorSettings.publishableKey;
-    if (hasConfig) {
-      honorConnStatus.textContent = "已設定 Supabase";
-      honorConnStatus.className = "status online";
-    } else {
-      honorConnStatus.textContent = "未設定 Supabase";
-      honorConnStatus.className = "status offline";
-    }
-  }
-
-  /** Supabase RPC 呼叫 */
-  async function honorRPC(fn, body) {
-    if (!honorSettings.supabaseUrl || !honorSettings.publishableKey) {
-      throw new Error("請先設定 Supabase URL 與 Publishable Key");
-    }
-    const res = await fetch(`${honorSettings.supabaseUrl}/rest/v1/rpc/${fn}`, {
-      method: "POST",
-      headers: {
-        apikey: honorSettings.publishableKey,
-        Authorization: "Bearer " + honorSettings.publishableKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(15000),
-    });
-    if (!res.ok) {
-      const errText = await res.text().catch(() => "");
-      throw new Error(`Supabase ${res.status} ${errText.slice(0, 200)}`);
-    }
-    return res.json();
-  }
-
-  /** 顯示學生查詢結果（單列：姓名＋分數） */
-  function renderStudentInfo(d) {
-    const sp = (d && d.student) || {};
-    const rec = (d && d.stu_points) || {};
-    honorStuName.textContent = sp.stu_name || "　";
-    honorScoreA.textContent = rec.readbook || rec.readBook || "0";
-    honorScoreB.textContent = rec.read || "0";
-    honorScoreC.textContent = rec.run || "0";
-    honorScoreD.textContent = rec.honor || "0";
-    honorStudentInfo.style.display = "block";
-  }
-
-  function clearStudentInfo() {
-    honorStuName.textContent = "　";
-    honorScoreA.textContent = "0";
-    honorScoreB.textContent = "0";
-    honorScoreC.textContent = "0";
-    honorScoreD.textContent = "0";
-    honorStudentInfo.style.display = "none";
-  }
-
-  /** 查詢學生積點 */
-  honorBtnQuery.addEventListener("click", async () => {
-    const cardId = honorQueryInput.value.trim();
-    if (!cardId) {
-      honorQueryMsg.textContent = "請輸入卡號或學號";
-      honorQueryMsg.className = "msg error";
-      return;
-    }
-    if (!honorSettings.supabaseUrl || !honorSettings.publishableKey) {
-      honorQueryMsg.textContent = "請先設定 Supabase URL 與 Publishable Key";
-      honorQueryMsg.className = "msg error";
-      return;
-    }
-    clearStudentInfo();
-    honorQueryMsg.textContent = "查詢中…";
-    honorQueryMsg.className = "msg";
-    try {
-      let d = await honorRPC("get_stu_points", { p_card: cardId });
-      // PostgREST 對 RETURNS TABLE 的函數回傳陣列，需取出第一筆
-      if (Array.isArray(d)) d = d[0] || null;
-      if (d && d.student) {
-        renderStudentInfo(d);
-        honorQueryMsg.textContent = "查詢成功";
-        honorQueryMsg.className = "msg success";
-      } else {
-        honorQueryMsg.textContent = "查無此卡號/學號";
-        honorQueryMsg.className = "msg error";
-      }
-    } catch (err) {
-      honorQueryMsg.textContent = "查詢失敗：" + err.message;
-      honorQueryMsg.className = "msg error";
-    }
-  });
-
-  honorQueryInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") honorBtnQuery.click();
-  });
-
-  /** 儲存 Supabase 設定 */
-  honorBtnSaveConfig.addEventListener("click", saveHonorSettings);
-
-  /* ---------- 學生加分（四區 0-5 分） ---------- */
-
-  const addPointItems = ["readBook", "read", "run", "honor"];
-  addPointItems.forEach((item) => {
-    const slider = $(`addPoints-${item}`);
-    const valueSpan = $(`zoneValue-${item}`);
-    slider.addEventListener("input", () => {
-      valueSpan.textContent = slider.value;
-    });
-  });
-
-  /** 執行加分 RPC（單一項目） */
-  async function honorAddPoints(cardId, item, points) {
-    if (!honorSettings.supabaseUrl || !honorSettings.publishableKey) {
-      throw new Error("請先設定 Supabase URL 與 Publishable Key");
-    }
-
-    const res = await fetch(`${honorSettings.supabaseUrl}/rest/v1/rpc/add_stu_points`, {
-      method: "POST",
-      headers: {
-        apikey: honorSettings.publishableKey,
-        Authorization: "Bearer " + honorSettings.publishableKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        p_card: cardId,
-        p_item: item,
-        p_points: points,
-      }),
-      signal: AbortSignal.timeout(15000),
-    });
-    if (!res.ok) {
-      const errText = await res.text().catch(() => "");
-      throw new Error(`Supabase ${res.status} ${errText.slice(0, 200)}`);
-    }
-    return null;
-  }
-
-  honorBtnAddPoints.addEventListener("click", async () => {
-    if (!honorSettings.supabaseUrl || !honorSettings.publishableKey) {
-      addPointsMsg.textContent = "請先設定 Supabase URL 與 Publishable Key";
-      addPointsMsg.className = "msg error";
-      return;
-    }
-
-    const itemLabels = { readBook: "英文", read: "閱讀", run: "跑步", honor: "榮譽" };
-    const toAdd = addPointItems.filter((item) => {
-      const v = parseInt($(`addPoints-${item}`).value, 10);
-      return v > 0;
-    }).map((item) => ({ item, points: parseInt($(`addPoints-${item}`).value, 10) }));
-
-    if (toAdd.length === 0) {
-      addPointsMsg.textContent = "請至少選擇一項加分分數（0-5）";
-      addPointsMsg.className = "msg error";
-      return;
-    }
-
-    // 目標學生：以勾選學生為優先，否則使用單筆卡號輸入
-    const checkedCards = Array.from(
-      classStudentList.querySelectorAll("input[type='checkbox']:checked")
-    ).map((cb) => cb.getAttribute("data-card"));
-    const cardId = addPointsCardId.value.trim();
-    const targets = checkedCards.length > 0 ? checkedCards : (cardId ? [cardId] : []);
-
-    if (targets.length === 0) {
-      addPointsMsg.textContent = "請先選擇班級勾選學生，或輸入單筆卡號/學號";
-      addPointsMsg.className = "msg error";
-      return;
-    }
-
-    honorBtnAddPoints.disabled = true;
-    addPointsMsg.textContent = `加分中…（共 ${targets.length} 位學生）`;
-    addPointsMsg.className = "msg";
-
-    try {
-      let okCount = 0;
-      const failCards = [];
-      for (const card of targets) {
-        try {
-          for (const { item, points } of toAdd) {
-            await honorAddPoints(card, item, points);
-          }
-          okCount++;
-        } catch (err) {
-          failCards.push(`${card}（${err.message.slice(0, 80)}）`);
-        }
-      }
-
-      const detail = toAdd.map((a) => `${itemLabels[a.item]} +${a.points}`).join("、");
-      if (failCards.length === 0) {
-        addPointsMsg.textContent = `加分成功：${targets.length} 位學生（${detail}）`;
-        addPointsMsg.className = "msg success";
-      } else {
-        addPointsMsg.textContent = `加分完成：成功 ${okCount} 位，失敗 ${failCards.length} 位（${detail}）\n失敗：${failCards.join("、")}`;
-        addPointsMsg.className = "msg error";
-      }
-
-      // 重設分數與輸入（勾選清除，方便下一輪）
-      addPointItems.forEach((item) => {
-        $(`addPoints-${item}`).value = 0;
-        $(`zoneValue-${item}`).textContent = "0";
-      });
-      addPointsCardId.value = "";
-      if (failCards.length === 0) {
-        classStudentList
-          .querySelectorAll("input[type='checkbox']")
-          .forEach((cb) => (cb.checked = false));
-        updateClassSelectedCount();
-      }
-    } catch (err) {
-      addPointsMsg.textContent = "加分失敗：" + err.message;
-      addPointsMsg.className = "msg error";
-    } finally {
-      honorBtnAddPoints.disabled = false;
-      if (checkedCards.length === 0) addPointsCardId.focus();
-    }
-  });
-
-  addPointsCardId.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") honorBtnAddPoints.click();
-  });
-
-  /* ---------- 學生加分（班級勾選） ---------- */
-
-  let allChecked = false; // 全選/全不選狀態
-
-  /** 班級中文標籤：1年1班 → 一年甲班（類推至 六年癸班） */
-  function toClassLabel(grade, cls) {
-    const gLabels = ["一", "二", "三", "四", "五", "六", "七", "八", "九"];
-    const cLabels = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
-    const g = gLabels[grade - 1] || String(grade);
-    const c = cLabels[cls - 1] || String(cls);
-    return `${g}年${c}班`;
-  }
-
-  /** 由 school_students 取出所有年級班級組合，填入下拉選單 */
-  async function populateClassSelect() {
-    if (!honorSettings.supabaseUrl || !honorSettings.publishableKey) return;
-    try {
-      const res = await fetch(`${honorSettings.supabaseUrl}/rest/v1/school_students?select=grade,class`, {
-        headers: {
-          apikey: honorSettings.publishableKey,
-          Authorization: "Bearer " + honorSettings.publishableKey,
-        },
-        signal: AbortSignal.timeout(15000),
-      });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const rows = await res.json();
-
-      const map = new Map();
-      rows.forEach((r) => map.set(`${r.grade}-${r.class}`, { g: r.grade, c: r.class }));
-      const combos = [...map.values()].sort((a, b) => a.g - b.g || a.c - b.c);
-
-      addPointsClassSelect.innerHTML =
-        '<option value="">-- 請選擇年級班級 --</option>' +
-        combos
-          .map(({ g, c }) => `<option value="${g}-${c}">${toClassLabel(g, c)}</option>`)
-          .join("");
-    } catch (err) {
-      addPointsClassSelect.innerHTML = '<option value="">班級載入失敗，請重新切換分頁</option>';
-    }
-  }
-
-  /** 載入所選班級的學生清單（checkbox 勾選） */
-  async function loadClassStudents() {
-    const val = addPointsClassSelect.value;
-    classStudentList.innerHTML = "";
-    allChecked = false;
-    btnToggleAllStudents.textContent = "全選";
-    classSelectedCount.textContent = "已勾選 0 位學生";
-    if (!val) return;
-
-    const [grade, cls] = val.split("-").map(Number);
-    classStudentList.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:16px;">載入中…</div>';
-    try {
-      const res = await fetch(
-        `${honorSettings.supabaseUrl}/rest/v1/school_students?grade=eq.${grade}&class=eq.${cls}&select=card,name,seat_no&order=seat_no.asc`,
-        {
-          headers: {
-            apikey: honorSettings.publishableKey,
-            Authorization: "Bearer " + honorSettings.publishableKey,
-          },
-          signal: AbortSignal.timeout(15000),
-        }
-      );
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const students = await res.json();
-
-      if (!Array.isArray(students) || students.length === 0) {
-        classStudentList.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:16px;">此班級查無學生</div>';
-        return;
-      }
-
-      classStudentList.innerHTML = "";
-      students.forEach((st) => {
-        const label = document.createElement("label");
-        label.className = "stu-check";
-        label.innerHTML =
-          `<input type="checkbox" data-card="${esc(st.card)}" />` +
-          `<span class="stu-name">${esc(st.name)}</span>` +
-          `<span class="stu-card">${esc(st.card)}</span>`;
-        label.addEventListener("click", (e) => {
-          if (e.target !== label) return;
-          const cb = label.querySelector("input");
-          cb.checked = !cb.checked;
-          cb.dispatchEvent(new Event("change"));
-        });
-        classStudentList.appendChild(label);
-      });
-    } catch (err) {
-      classStudentList.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:#f87171;padding:16px;">載入失敗：${esc(err.message)}</div>`;
-    }
-  }
-
-  /** 更新勾選人數顯示 */
-  function updateClassSelectedCount() {
-    const n = classStudentList.querySelectorAll("input[type='checkbox']:checked").length;
-    classSelectedCount.textContent = `已勾選 ${n} 位學生`;
-  }
-
-  addPointsClassSelect.addEventListener("change", loadClassStudents);
-
-  // 勾選狀態 → 高亮 ＋ 計數
-  classStudentList.addEventListener("change", (e) => {
-    if (e.target && e.target.type === "checkbox") {
-      e.target.closest(".stu-check").classList.toggle("checked", e.target.checked);
-      updateClassSelectedCount();
-    }
-  });
-
-  // 全選 / 全不選
-  btnToggleAllStudents.addEventListener("click", () => {
-    const boxes = classStudentList.querySelectorAll("input[type='checkbox']");
-    if (boxes.length === 0) return;
-    allChecked = !allChecked;
-    boxes.forEach((cb) => {
-      cb.checked = allChecked;
-      cb.closest(".stu-check").classList.toggle("checked", allChecked);
-    });
-    btnToggleAllStudents.textContent = allChecked ? "全不選" : "全選";
-    updateClassSelectedCount();
-  });
-
-  /* ---------- 元素：積點查詢排行榜 ---------- */
-  const rankModeSelect = $("rankModeSelect");
-  const rankItemSelect = $("rankItemSelect");
-  const rankBtnLoad = $("rankBtnLoad");
-  const rankResultWrap = $("rankResultWrap");
-  const rankTbody = $("rankTbody");
-  const rankMsg = $("rankMsg");
-
-  /** 載入排行榜（總排/月排 × 四項目） */
-  async function loadRanking() {
-    if (!honorSettings.supabaseUrl || !honorSettings.publishableKey) {
-      rankMsg.textContent = "請先在「⚙️ 全部設置」設定 Supabase";
-      rankMsg.className = "msg error";
-      rankResultWrap.style.display = "none";
-      return;
-    }
-    const label = { readBook: "英文", read: "閱讀", run: "跑步", honor: "榮譽" }[rankItemSelect.value];
-    rankMsg.textContent = (rankModeSelect.value === "monthly" ? "月排行" : "總排行") + "（" + label + "）載入中…";
-    rankMsg.className = "msg";
-    try {
-      const fn = rankModeSelect.value === "monthly" ? "get_monthly_ranking" : "get_total_ranking";
-      let rows = await honorRPC(fn, { p_item: rankItemSelect.value, p_limit: 15 });
-      if (Array.isArray(rows)) rows = rows[0] === undefined ? [] : rows;
-      rows = Array.isArray(rows) ? rows : [];
-
-      rankTbody.innerHTML = "";
-      rankResultWrap.style.display = "block";
-      rankMsg.textContent = (rankModeSelect.value === "monthly" ? "月排行" : "總排行") + "（" + label + "）";
-      rankMsg.className = "msg success";
-
-      if (rows.length === 0) {
-        rankTbody.innerHTML = '<tr><td colspan="5" style="color:#94a3b8">查無資料</td></tr>';
-        return;
-      }
-
-      rows.forEach((r, i) => {
-        const rank = i + 1;
-        const tr = document.createElement("tr");
-        tr.innerHTML =
-          `<td>${rank === 1 ? "🥇 " : rank === 2 ? "🥈 " : rank === 3 ? "🥉 " : ""}${rank}</td>` +
-          `<td>${esc(r.card)}</td>` +
-          `<td>${esc(r.name)}</td>` +
-          `<td>${esc(toClassLabel(r.grade, r.class))}</td>` +
-          `<td class="pts">${esc(r.points == null ? 0 : r.points)}</td>`;
-        rankTbody.appendChild(tr);
-      });
-    } catch (err) {
-      rankResultWrap.style.display = "none";
-      rankMsg.textContent = "排行榜載入失敗：" + err.message;
-      rankMsg.className = "msg error";
-    }
-  }
-
-  // 下拉選單切換即自動載入
-  rankModeSelect.addEventListener("change", loadRanking);
-  rankItemSelect.addEventListener("change", loadRanking);
-  rankBtnLoad.addEventListener("click", loadRanking);
-
   /* ---------- 初始化 ---------- */
 
   /* exe 旁邊的 config.json：提供預設公告機清單與積點排行 Supabase 設定
@@ -1297,15 +836,6 @@
           added++;
         }
         if (added > 0) saveServers();
-
-        /* 積點排行：檔案有值時以檔案為準 */
-        const honor = raw.honor || {};
-        if (honor.supabaseUrl && honor.publishableKey) {
-          honorSettings.supabaseUrl = String(honor.supabaseUrl);
-          honorSettings.publishableKey = String(honor.publishableKey);
-          localStorage.setItem("tvwall_honor_supabaseUrl", honorSettings.supabaseUrl);
-          localStorage.setItem("tvwall_honor_publishableKey", honorSettings.publishableKey);
-        }
       }
     } catch (err) {
       console.warn("[config.json] 讀取失敗，使用 localStorage 設定：", err);
@@ -1317,7 +847,6 @@
 
     renderServerList();
     populateServerSelects();
-    loadHonorSettingsIntoForm();
 
     /* 啟動時先套用預設名稱（讀到公告機設定後會再更新） */
     applyTabNamesToUi({});
