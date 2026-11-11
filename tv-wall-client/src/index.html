@@ -52,7 +52,7 @@
 
           <!-- 子區塊：上傳檔案（影片／照片／好書介紹／校園風雲／衛教宣導） -->
           <section class="sub-panel" id="subBookUpload">
-            <div class="sub-header">上傳檔案（影片 / 照片 / <span id="typeLabelBook2">好書介紹</span> / <span id="typeLabelCampus2">校園風雲</span> / <span id="typeLabelHealth2">衛教宣導</span>）</div>
+            <div class="sub-header">上傳檔案（影片 / 照片 / <span id="typeLabelBook2">好書介紹</span> / <span id="typeLabelCampus2">校園風雲</span> / <span id="typeLabelHealth2">衛教宣導</span> / <span id="typeLabelCounseling2">輔導室公告</span>）</div>
             <div class="row">
               <label>選擇公告機:</label>
               <select id="bookServerSelect"></select>
@@ -64,6 +64,7 @@
               <label class="radio-inline"><input type="radio" name="bookFileType" value="book" checked /> <span id="typeLabelBook">好書介紹</span></label>
               <label class="radio-inline"><input type="radio" name="bookFileType" value="campus" /> <span id="typeLabelCampus">校園風雲</span></label>
               <label class="radio-inline"><input type="radio" name="bookFileType" value="health" /> <span id="typeLabelHealth">衛教宣導</span></label>
+              <label class="radio-inline"><input type="radio" name="bookFileType" value="counseling" /> <span id="typeLabelCounseling">輔導室公告</span></label>
             </div>
             <div class="row type-row">
               <label class="checkbox-inline"><input type="checkbox" id="uploadAllServers" /> 傳輸檔案至全部公告機</label>
@@ -308,6 +309,7 @@
               <label class="radio-inline"><input type="checkbox" id="tabChkBooks" checked /> <span id="tabLabelBooks">資料傳輸</span></label>
               <label class="radio-inline"><input type="checkbox" id="tabChkCampus" checked /> <span id="tabLabelCampus">校園風雲</span></label>
               <label class="radio-inline"><input type="checkbox" id="tabChkHealth" checked /> <span id="tabLabelHealth">衛教宣導</span></label>
+              <label class="radio-inline"><input type="checkbox" id="tabChkCounseling" checked /> <span id="tabLabelCounseling">輔導室公告</span></label>
             </div>
             <div class="row type-row tabname-row">
               <label>分頁標題:</label>
@@ -328,10 +330,14 @@
                   <span class="tabname-label">分頁四</span>
                   <input type="text" id="tabNameHealth" maxlength="20" placeholder="預設：衛教宣導" />
                 </div>
+                <div class="tabname-item">
+                  <span class="tabname-label">分頁五</span>
+                  <input type="text" id="tabNameCounseling" maxlength="20" placeholder="預設：輔導室公告" />
+                </div>
               </div>
             </div>
             <div class="hint">
-              💡 分頁標題＝公告機上分頁按鈕顯示的名稱。分頁一＝電視牆、分頁二＝好書介紹、分頁三＝校園風雲、分頁四＝衛教宣導（順序固定不變）。留空時使用預設值，榮譽榜固定為「積點排行」。
+              💡 分頁標題＝公告機上分頁按鈕顯示的名稱。分頁一＝電視牆、分頁二＝好書介紹、分頁三＝校園風雲、分頁四＝衛教宣導、分頁五＝輔導室公告（順序固定不變）。留空時使用預設值，榮譽榜固定為「積點排行」。
             </div>
             <div class="row">
               <button id="btnLoadTabs" class="btn-secondary">讀取目前設定</button>
