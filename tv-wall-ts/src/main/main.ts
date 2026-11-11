@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+﻿import { app, BrowserWindow, ipcMain } from "electron";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
@@ -36,7 +36,6 @@ const DIAG_JS = `(() => {
     bodyClass: document.body.className,
     tabBarHidden: document.getElementById("tabBar").classList.contains("hhidden") || document.getElementById("tabBar").classList.contains("hidden"),
     tabTvActive: document.getElementById("tabTv").classList.contains("active"),
-    tabHonorActive: document.getElementById("tabHonor").classList.contains("active"),
     tabBooksActive: document.getElementById("tabBooks") ? document.getElementById("tabBooks").classList.contains("active") : null,
     booksPageHidden: document.getElementById("booksPage") ? document.getElementById("booksPage").classList.contains("hidden") : null,
     bookSettingsSet: !!window.BOOK_SETTINGS,
@@ -47,18 +46,6 @@ const DIAG_JS = `(() => {
     booksMsg: (function () {
       const m = document.getElementById("booksMsg");
       return m ? m.textContent : null;
-    })(),
-    honorSettingsSet: !!window.HONOR_SETTINGS,
-    honorScoringChildren: document.getElementById("scoring") ? document.getElementById("scoring").children.length : -1,
-    honorScoringText: (function () {
-      const s = document.getElementById("scoring");
-      if (!s) return null;
-      const t = s.textContent || "";
-      return t.slice(0, 120);
-    })(),
-    honorToast: (function () {
-      const t = document.getElementById("honorToast");
-      return t ? t.textContent : null;
     })(),
   };
 })()`;
@@ -103,8 +90,6 @@ interface FileConfig {
   tabs?: TabVisibility;
   /** 各分頁的顯示標題（tabNames 區塊；空白＝用預設名稱） */
   tabNames?: { tv?: string; books?: string; campus?: string; health?: string; counseling?: string };
-  /** 積點排行（榮譽系統）設定區塊 */
-  honor?: HonorSettings;
 }
 
 /** 解析後的設定（含實際使用的資料夾路徑） */
@@ -209,27 +194,17 @@ function resolveConfig(): ResolvedConfig {
     serverPort:
       typeof raw.serverPort === "number" && raw.serverPort > 0 ? raw.serverPort : 8123,
     tabNames,
-    defaultTab: raw.defaultTab === "honor" ? "honor" : "tv",
+    defaultTab: "tv",
     tabs:
       raw.tabs && typeof raw.tabs === "object"
         ? {
             tv: raw.tabs.tv !== false,
-            honor: raw.tabs.honor !== false,
             books: raw.tabs.books !== false,
             campus: raw.tabs.campus !== false,
             health: raw.tabs.health !== false,
             counseling: raw.tabs.counseling !== false,
           }
-        : { tv: true, honor: true, books: true, campus: true, health: true, counseling: true },
-    honor:
-      raw.honor && typeof raw.honor === "object"
-        ? {
-            supabaseUrl: String(raw.honor.supabaseUrl).trim(),
-            publishableKey: String(raw.honor.publishableKey).trim(),
-            schoolId: String(raw.honor.schoolId ?? "").trim(),
-            topN: typeof raw.honor.topN === "number" ? raw.honor.topN : 10,
-          }
-        : undefined,
+        : { tv: true, books: true, campus: true, health: true, counseling: true },
   };
 }
 
@@ -257,7 +232,6 @@ function publicConfig(c: ResolvedConfig): AppConfig {
     defaultTab: c.defaultTab,
     tabs: c.tabs,
     tabNames: c.tabNames,
-    honor: c.honor,
     localIP: localIPv4s()[0] ?? "",
   };
 }
@@ -341,16 +315,12 @@ function setupIpc(): void {
   });
 
   ipcMain.handle("config", () => {
-    const resolved = resolveConfig() as ResolvedConfig & { _debugHonorRaw?: string; _debugRoot?: string };
+    const resolved = resolveConfig() as ResolvedConfig & { _debugRoot?: string };
     const cfg = publicConfig(resolved);
     try {
       const debug = {
         ...cfg,
-        _debugHonorRaw: resolved._debugHonorRaw,
         _debugRoot: resolved._debugRoot,
-        _rawHonorExists: !!resolved.honor,
-        _rawHonorSupabaseUrl: resolved.honor ? resolved.honor.supabaseUrl : null,
-        _rawHonorPublishableKey: resolved.honor ? resolved.honor.publishableKey : null,
         _rawDefaultTab: resolved.defaultTab,
       };
       fs.writeFileSync(path.join(appRoot(), "tvwall-config-debug.json"), JSON.stringify(debug, null, 2));
@@ -401,9 +371,9 @@ function createWindow(): void {
     win.webContents.once("did-finish-load", () => {
       /* 除錯：TVWALL_TAB=tv|honor|books → 載入後自動切到該分頁（配合截圖） */
       const tabTest = (process.env.TVWALL_TAB || "").toLowerCase();
-      if (tabTest === "honor" || tabTest === "books") {
+      if (tabTest === "books") {
         void win?.webContents.executeJavaScript(
-          `document.getElementById('tab${tabTest === "honor" ? "Honor" : "Books"}')?.click()`,
+          `document.getElementById('tabBooks')?.click()`,
         ).catch(() => undefined);
       }
       setTimeout(() => {
@@ -479,7 +449,6 @@ if (!gotLock) {
               const raw = JSON.parse(fs.readFileSync(bootCfg.configPath, "utf8").replace(/^\uFEFF/, "")) as FileConfig;
               const tabs = {
                 tv: raw.tabs ? raw.tabs.tv !== false : true,
-                honor: raw.tabs ? raw.tabs.honor !== false : true,
                 books: raw.tabs ? raw.tabs.books !== false : true,
                 campus: raw.tabs ? raw.tabs.campus !== false : true,
                 health: raw.tabs ? raw.tabs.health !== false : true,
@@ -499,7 +468,7 @@ if (!gotLock) {
                 counseling: tabName(tn.counseling, "輔導室公告"),
               };
               if (win && !win.isDestroyed()) {
-                win.webContents.send("config-updated", { tabs, tabNames, defaultTab: raw.defaultTab === "honor" ? "honor" : "tv" });
+                win.webContents.send("config-updated", { tabs, tabNames, defaultTab: "tv" });
               }
             } catch {
               /* 讀取失敗：略過 */

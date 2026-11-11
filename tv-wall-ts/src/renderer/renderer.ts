@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 渲染程序：雙區版面、影片循環播放、圖片輪播、熱鍵。
  * 此檔刻意不使用 import/export，以便以指令稿方式直接被 index.html 載入。
  * （共用型別請放 src/shared/globals.d.ts，用全域宣告方式引用。）
@@ -24,7 +24,6 @@
   const imageMsg = $("imageMsg");
   const tabBar = $("tabBar");
   const tabTv = $("tabTv");
-  const tabHonor = $("tabHonor");
   const tabBooks = $("tabBooks");
   const tabCampus = $("tabCampus");
   const tabHealth = $("tabHealth");
@@ -35,7 +34,6 @@
   const tabNameHealth = $("tabNameHealth");
   const tabNameCounseling = $("tabNameCounseling");
   const tvPage = $("tvPage");
-  const honorPage = $("honorPage");
   const booksPage = $("booksPage");
   const campusPage = $("campusPage");
   const healthPage = $("healthPage");
@@ -53,20 +51,19 @@
   let autoTabTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** 目前分頁 */
-  let currentTab: "tv" | "honor" | "books" | "campus" | "health" | "counseling" = "tv";
+  let currentTab: "tv" | "books" | "campus" | "health" | "counseling" = "tv";
 
   /** 自動切換分頁間隔（1分鐘無操作自動切換，依序 tv → honor → books → campus → health） */
   const AUTO_TAB_MS = 60000;
-  const TAB_CYCLE: Array<"tv" | "honor" | "books" | "campus" | "health" | "counseling"> = ["tv", "honor", "books", "campus", "health", "counseling"];
+  const TAB_CYCLE: Array<"tv" | "books" | "campus" | "health" | "counseling"> = ["tv", "books", "campus", "health", "counseling"];
 
   /** 分頁顯示設定（false＝隱藏；未填視為顯示） */
-  let tabVisibility: TabVisibility = { tv: true, honor: true, books: true, campus: true, health: true, counseling: true };
+  let tabVisibility: TabVisibility = { tv: true, books: true, campus: true, health: true, counseling: true };
 
   /** 過濾出目前允許顯示的分頁（依 config tabs 順序 tv → honor → books） */
-  function visibleTabList(): Array<"tv" | "honor" | "books" | "campus" | "health" | "counseling"> {
+  function visibleTabList(): Array<"tv" | "books" | "campus" | "health" | "counseling"> {
     return TAB_CYCLE.filter((k) => {
       if (k === "tv") return tabVisibility.tv !== false;
-      if (k === "honor") return tabVisibility.honor !== false;
       if (k === "books") return tabVisibility.books !== false;
       if (k === "campus") return tabVisibility.campus !== false;
       if (k === "health") return tabVisibility.health !== false;
@@ -78,14 +75,12 @@
   function applyTabs(t?: TabVisibility): void {
     tabVisibility = {
       tv: !t || t.tv !== false,
-      honor: !t || t.honor !== false,
       books: !t || t.books !== false,
       campus: !t || t.campus !== false,
       health: !t || t.health !== false,
       counseling: !t || t.counseling !== false,
     };
     tabTv.classList.toggle("hidden", tabVisibility.tv === false);
-    tabHonor.classList.toggle("hidden", tabVisibility.honor === false);
     tabBooks.classList.toggle("hidden", tabVisibility.books === false);
     tabCampus.classList.toggle("hidden", tabVisibility.campus === false);
     tabHealth.classList.toggle("hidden", tabVisibility.health === false);
@@ -151,23 +146,20 @@
   }
 
   /** 切換分頁：離開電視牆時暫停播放，回來時恢復 */
-  function setTab(name: "tv" | "honor" | "books" | "campus" | "health" | "counseling"): void {
+  function setTab(name: "tv" | "books" | "campus" | "health" | "counseling"): void {
     const prevTab = currentTab;
     currentTab = name;
     document.body.classList.toggle("page-tv", name === "tv");
-    document.body.classList.toggle("page-honor", name === "honor");
     document.body.classList.toggle("page-books", name === "books");
     document.body.classList.toggle("page-campus", name === "campus");
     document.body.classList.toggle("page-health", name === "health");
     document.body.classList.toggle("page-counseling", name === "counseling");
     tvPage.classList.toggle("hidden", name !== "tv");
-    honorPage.classList.toggle("hidden", name !== "honor");
     booksPage.classList.toggle("hidden", name !== "books");
     campusPage.classList.toggle("hidden", name !== "campus");
     healthPage.classList.toggle("hidden", name !== "health");
     counselingPage.classList.toggle("hidden", name !== "counseling");
     tabTv.classList.toggle("active", name === "tv");
-    tabHonor.classList.toggle("active", name === "honor");
     tabBooks.classList.toggle("active", name === "books");
     tabCampus.classList.toggle("active", name === "campus");
     tabHealth.classList.toggle("active", name === "health");
@@ -180,8 +172,6 @@
       video.pause();
       stopTimer();
     }
-    if (prevTab === "tv" && name !== "tv") window.HonorTab?.onHide?.();
-    if (name === "honor") window.HonorTab?.onShow?.();
     if (name === "books") window.BooksTab?.onShow?.();
     if (name === "campus") window.CampusTab?.onShow?.();
     if (name === "health") window.HealthTab?.onShow?.();
@@ -194,7 +184,6 @@
   }
 
   tabTv.addEventListener("click", () => setTab("tv"));
-  tabHonor.addEventListener("click", () => setTab("honor"));
   tabBooks.addEventListener("click", () => setTab("books"));
   tabCampus.addEventListener("click", () => setTab("campus"));
   tabHealth.addEventListener("click", () => setTab("health"));
@@ -363,8 +352,7 @@ tabCounseling.addEventListener("click", () => setTab("counseling"));
   /* ---------- 事件 ---------- */
 
   window.addEventListener("keydown", (e) => {
-    if (currentTab === "honor") return; // 積點排行分頁：按鍵留給查詢輸入框
-    switch (e.key) {
+      switch (e.key) {
       case "Escape":
         e.preventDefault();
         void tvwall.close();
@@ -442,16 +430,6 @@ tabCounseling.addEventListener("click", () => setTab("counseling"));
       serverIpDisplay.textContent = cfg.localIP || "--";
     }
 
-    /* 積點排行設定注入（config.json 的 honor 區塊）；注入後由 honor.js 自行載入資料。
-       分頁列始終可見，讓使用者可點擊切換；若無 honour 設定，點擊積點排行會切回電視牆。 */
-    const honor = (cfg as Partial<AppConfig> & { honor?: HonorSettings }).honor;
-    const hasHonor = !!(
-      honor && honor.supabaseUrl && honor.publishableKey
-    );
-    if (hasHonor) {
-      window.HONOR_SETTINGS = honor;
-      window.HonorTab?.init?.(honor);
-    }
     tabBar.classList.remove("hidden"); // 分頁按鈕始終存在
 
     /* 好書介紹分頁設定注入（books 資料夾清單由 rescan 給 BooksTab.setItems） */
@@ -493,10 +471,8 @@ tabCounseling.addEventListener("click", () => setTab("counseling"));
 
     /* 預設分頁：只選目前允許顯示的分頁 */
     const vis = visibleTabList();
-    const wantHonor = hasHonor && (cfg as Partial<AppConfig> & { defaultTab?: string }).defaultTab === "honor";
-    let startTab: "tv" | "honor" | "books" | "campus" | "health" | "counseling" = "tv";
-    if (wantHonor && vis.includes("honor")) startTab = "honor";
-    else if (vis.length > 0 && !vis.includes("tv")) startTab = vis[0];
+    let startTab: "tv" | "books" | "campus" | "health" | "counseling" = "tv";
+    if (vis.length > 0 && !vis.includes("tv")) startTab = vis[0];
     setTab(startTab);
     if (startTab === "tv") {
       updateLayout();

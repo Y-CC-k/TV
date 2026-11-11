@@ -4,7 +4,6 @@
     <meta charset="utf-8" />
     <title>電視牆 ＋ 積點排行</title>
     <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="honor.css" />
     <link rel="stylesheet" href="books.css" />
   </head>
   <body class="page-tv">
@@ -19,9 +18,6 @@
     <nav id="tabBar" class="tabbar">
       <button type="button" id="tabTv" class="tab active">
         <span class="tab-ico">📺</span><span id="tabNameTv">精彩槺榔</span>
-      </button>
-      <button type="button" id="tabHonor" class="tab">
-        <span class="tab-ico">🏆</span><span>積點排行</span>
       </button>
       <button type="button" id="tabBooks" class="tab">
         <span class="tab-ico">📚</span><span id="tabNameBooks">好書介紹</span>
@@ -62,84 +58,6 @@
           <div id="imageCaption4" class="image-caption"></div>
         </section>
       </div>
-    </div>
-
-    <!-- ===== 分頁二：積點排行（積點系統，資料來源 Supabase） ===== -->
-    <div id="honorPage" class="page honor-page hidden">
-      <main class="shell-main">
-        <div class="content-zone">
-
-          <!-- 左區：個人資訊卡 -->
-          <section class="card left-zone">
-            <div class="card-head">
-              <span class="card-tag">學生資訊</span>
-              <div class="card-avatar-wrap"><span id="userAvatar" class="avatar-fallback">🧑‍🎓</span></div>
-            </div>
-            <div class="card-body">
-              <div class="query-box">
-                <input type="text" id="queryInput" placeholder="卡號/學號" maxlength="12" autocomplete="off" />
-                <button type="button" id="queryBtn">查詢</button>
-              </div>
-              <!-- 數字鍵盤（點選輸入卡號） -->
-              <div class="numpad" id="numpad">
-                <button type="button" class="np-btn" data-key="1">1</button>
-                <button type="button" class="np-btn" data-key="2">2</button>
-                <button type="button" class="np-btn" data-key="3">3</button>
-                <button type="button" class="np-btn" data-key="4">4</button>
-                <button type="button" class="np-btn" data-key="5">5</button>
-                <button type="button" class="np-btn" data-key="6">6</button>
-                <button type="button" class="np-btn" data-key="7">7</button>
-                <button type="button" class="np-btn" data-key="8">8</button>
-                <button type="button" class="np-btn" data-key="9">9</button>
-                <button type="button" class="np-btn np-clear" data-key="C">清除</button>
-                <button type="button" class="np-btn" data-key="0">0</button>
-                <button type="button" class="np-btn np-enter" data-key="E">確認</button>
-              </div>
-              <p class="user_name"><span id="stuName">　　　</span><span class="user_id_num" id="stuId">---</span></p>
-              <div class="score-grid">
-                <div class="score-item score-A" id="scoreA">
-                  <div class="score-label">英文</div>
-                  <div class="score-value">0</div>
-                </div>
-                <div class="score-item score-B" id="scoreB">
-                  <div class="score-label">閱讀</div>
-                  <div class="score-value">0</div>
-                </div>
-                <div class="score-item score-C" id="scoreC">
-                  <div class="score-label">跑步</div>
-                  <div class="score-value">0</div>
-                </div>
-                <div class="score-item score-D" id="scoreD">
-                  <div class="score-label">榮譽</div>
-                  <div class="score-value">0</div>
-                </div>
-              </div>
-              <!-- 左卡底部裝飾圖案 -->
-              <div class="card-deco" aria-hidden="true">
-                <span>🏆</span><span>🎓</span><span>⭐</span><span>🏅</span><span>📚</span><span>🎉</span>
-              </div>
-            </div>
-          </section>
-
-          <!-- 右區：四個排行榜面板（由左至右平分） -->
-          <section class="card right-zone">
-            <div class="card-head">
-              <span class="card-tag">排行榜</span>
-              <div class="rank-switch">
-                <button type="button" id="rankBtnTotal" class="rank-switch-btn active">總排行</button>
-                <button type="button" id="rankBtnMonthly" class="rank-switch-btn">月排行</button>
-              </div>
-            </div>
-            <div class="card-body">
-              <div class="scoring" id="scoring"></div>
-            </div>
-          </section>
-
-        </div>
-      </main>
-
-      <!-- 積點排行狀態提示 -->
-      <div class="honor-toast" id="honorToast"></div>
     </div>
 
     <!-- ===== 分頁三：好書介紹（books 資料夾圖片，卡片式輪播） ===== -->
@@ -265,7 +183,6 @@
     <script src="health.js"></script>
     <script src="counseling.js"></script>
     <script src="renderer.js"></script>
-    <script src="honor.js"></script>
     <script src="books.js"></script>
   </body>
 </html>

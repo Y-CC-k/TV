@@ -15,18 +15,6 @@ interface MediaItem {
 /** 圖片／影片在窗格內的縮放方式 */
 type FitMode = "contain" | "cover" | "fill";
 
-/** 積點排行（榮譽系統）設定：來自 config.json 的 honor 區塊 */
-interface HonorSettings {
-  /** Supabase 專案網址，例：https://xxxx.supabase.co */
-  supabaseUrl: string;
-  /** anon / publishable key（公開讀取） */
-  publishableKey: string;
-  /** 預設 school_id */
-  schoolId: string;
-  /** 排行榜顯示筆數（預設 10） */
-  topN?: number;
-}
-
 /** 傳給渲染程序的設定 */
 interface AppConfig {
   /** 圖片每頁停留毫秒 */
@@ -49,8 +37,6 @@ interface AppConfig {
   tabs?: TabVisibility;
   /** 各分頁的顯示標題（config.json 的 tabNames 區塊；未填的 key 用預設名稱） */
   tabNames?: TabNames;
-  /** 積點排行設定（有設定時才顯示該分頁） */
-  honor?: HonorSettings;
   /** 本機區網 IPv4（顯示在畫面右上角） */
   localIP?: string;
 }
@@ -59,8 +45,6 @@ interface AppConfig {
 interface TabVisibility {
   /** 電視牆（預設 true） */
   tv?: boolean;
-  /** 榮譽榜／積點查詢（預設 true） */
-  honor?: boolean;
   /** 好書介紹（預設 true） */
   books?: boolean;
   /** 校園風雲（預設 true） */
@@ -121,12 +105,6 @@ declare const tvwall: TvWallApi;
 
 /** 積點排行與好書介紹設定（renderer.ts 於 init 時注入） */
 interface Window {
-  HONOR_SETTINGS?: HonorSettings;
-  HonorTab?: {
-    init(settings: HonorSettings): void;
-    onShow(): void;
-    onHide(): void;
-  };
   BOOK_SETTINGS?: BookSettings;
   BooksTab?: {
     init(settings: BookSettings): void;
@@ -168,5 +146,4 @@ interface Window {
     onHide(): void;
     onKey(e: KeyboardEvent): boolean;
   };
-  __honorTimer?: number | null;
 }
