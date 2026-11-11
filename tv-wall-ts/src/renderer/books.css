@@ -5,7 +5,8 @@
 
 .books-page,
 .campus-page,
-.health-page {
+.health-page,
+.counseling-page {
   position: relative;
   display: flex;
   flex-direction: column;

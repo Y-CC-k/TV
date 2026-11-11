@@ -80,12 +80,16 @@ interface FileConfig {
   campusDir?: string;
   /** 衛教宣導（health 分頁）圖片資料夾 */
   healthDir?: string;
+  /** 輔導室公告（counseling 分頁）圖片資料夾 */
+  counselingDir?: string;
   /** 好書介紹每頁停留毫秒 */
   bookIntervalMs?: number;
   /** 校園風雲每頁停留毫秒 */
   campusIntervalMs?: number;
   /** 衛教宣導每頁停留毫秒 */
   healthIntervalMs?: number;
+  /** 輔導室公告每頁停留毫秒 */
+  counselingIntervalMs?: number;
   imageIntervalMs?: number;
   videoFit?: FitMode;
   imageFit?: FitMode;
@@ -98,7 +102,7 @@ interface FileConfig {
   /** 各分頁顯示／隱藏（false＝隱藏；未填視為顯示） */
   tabs?: TabVisibility;
   /** 各分頁的顯示標題（tabNames 區塊；空白＝用預設名稱） */
-  tabNames?: { tv?: string; books?: string; campus?: string; health?: string };
+  tabNames?: { tv?: string; books?: string; campus?: string; health?: string; counseling?: string };
   /** 積點排行（榮譽系統）設定區塊 */
   honor?: HonorSettings;
 }
@@ -110,6 +114,7 @@ interface ResolvedConfig extends AppConfig {
   booksDir: string;
   campusDir: string;
   healthDir: string;
+  counselingDir: string;
   serverMode: boolean;
   serverPort: number;
   /** 各分頁的顯示標題（空白＝預設） */
@@ -154,6 +159,7 @@ function resolveConfig(): ResolvedConfig {
   const booksDir = dir(raw.booksDir, "books");
   const campusDir = dir(raw.campusDir, "campus");
   const healthDir = dir(raw.healthDir, "health");
+  const counselingDir = dir(raw.counselingDir, "counseling");
 
   /* 分頁標題：未填或空白時用預設名稱 */
   const tn = raw.tabNames && typeof raw.tabNames === "object" ? raw.tabNames : {};
@@ -166,6 +172,7 @@ function resolveConfig(): ResolvedConfig {
     books: tabName(tn.books, "好書介紹"),
     campus: tabName(tn.campus, "校園風雲"),
     health: tabName(tn.health, "衛教宣導"),
+    counseling: tabName(tn.counseling, "輔導室公告"),
   };
 
   return {
@@ -175,6 +182,7 @@ function resolveConfig(): ResolvedConfig {
     booksDir,
     campusDir,
     healthDir,
+    counselingDir,
     imageIntervalMs:
       typeof raw.imageIntervalMs === "number" && raw.imageIntervalMs > 0
         ? raw.imageIntervalMs
@@ -191,6 +199,10 @@ function resolveConfig(): ResolvedConfig {
       typeof raw.healthIntervalMs === "number" && raw.healthIntervalMs > 0
         ? raw.healthIntervalMs
         : 8000,
+    counselingIntervalMs:
+      typeof raw.counselingIntervalMs === "number" && raw.counselingIntervalMs > 0
+        ? raw.counselingIntervalMs
+        : 8000,
     videoFit: raw.videoFit ?? "contain",
     imageFit: raw.imageFit ?? "fill",
     serverMode: raw.serverMode ?? false,
@@ -206,8 +218,9 @@ function resolveConfig(): ResolvedConfig {
             books: raw.tabs.books !== false,
             campus: raw.tabs.campus !== false,
             health: raw.tabs.health !== false,
+            counseling: raw.tabs.counseling !== false,
           }
-        : { tv: true, honor: true, books: true, campus: true, health: true },
+        : { tv: true, honor: true, books: true, campus: true, health: true, counseling: true },
     honor:
       raw.honor && typeof raw.honor === "object"
         ? {
@@ -238,6 +251,7 @@ function publicConfig(c: ResolvedConfig): AppConfig {
     bookIntervalMs: c.bookIntervalMs,
     campusIntervalMs: c.campusIntervalMs,
     healthIntervalMs: c.healthIntervalMs,
+    counselingIntervalMs: c.counselingIntervalMs,
     videoFit: c.videoFit,
     imageFit: c.imageFit,
     defaultTab: c.defaultTab,
@@ -322,6 +336,7 @@ function setupIpc(): void {
       books: collect(cfg.booksDir, IMAGE_EXTS),
       campus: collect(cfg.campusDir, IMAGE_EXTS),
       health: collect(cfg.healthDir, IMAGE_EXTS),
+      counseling: collect(cfg.counselingDir, IMAGE_EXTS),
     } as ScanResult;
   });
 
@@ -436,6 +451,7 @@ if (!gotLock) {
         booksDir: bootCfg.booksDir,
         campusDir: bootCfg.campusDir,
         healthDir: bootCfg.healthDir,
+        counselingDir: bootCfg.counselingDir,
         port: bootCfg.serverPort,
         configPath: bootCfg.configPath,
         onUploaded: () => {
@@ -467,6 +483,7 @@ if (!gotLock) {
                 books: raw.tabs ? raw.tabs.books !== false : true,
                 campus: raw.tabs ? raw.tabs.campus !== false : true,
                 health: raw.tabs ? raw.tabs.health !== false : true,
+                counseling: raw.tabs ? raw.tabs.counseling !== false : true,
               };
               /* 分頁標題：未填或空白用預設名稱（與 resolveConfig 相同規則） */
               const tn = raw.tabNames && typeof raw.tabNames === "object" ? raw.tabNames : {};
@@ -479,6 +496,7 @@ if (!gotLock) {
                 books: tabName(tn.books, "好書介紹"),
                 campus: tabName(tn.campus, "校園風雲"),
                 health: tabName(tn.health, "衛教宣導"),
+                counseling: tabName(tn.counseling, "輔導室公告"),
               };
               if (win && !win.isDestroyed()) {
                 win.webContents.send("config-updated", { tabs, tabNames, defaultTab: raw.defaultTab === "honor" ? "honor" : "tv" });

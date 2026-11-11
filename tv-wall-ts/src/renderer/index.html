@@ -32,6 +32,9 @@
       <button type="button" id="tabHealth" class="tab">
         <span class="tab-ico">🏥</span><span id="tabNameHealth">衛教宣導</span>
       </button>
+      <button type="button" id="tabCounseling" class="tab">
+        <span class="tab-ico">🧠</span><span id="tabNameCounseling">輔導室公告</span>
+      </button>
     </nav>
 
     <!-- ===== 分頁一：電視牆（原本的雙區播放） ===== -->
@@ -230,8 +233,37 @@
       <div id="healthMsg" class="msg books-msg hidden"></div>
     </div>
 
+    <!-- ===== 輔導室公告分頁：counseling 資料夾圖片輪播 ===== -->
+    <div id="counselingPage" class="page counseling-page hidden">
+      <main class="books-stage">
+        <button type="button" id="counselingPrev" class="book-nav" aria-label="上一則">‹</button>
+        <aside class="book-sidebar book-sidebar--start" data-side="start">
+          <div class="book-sidebar-list" id="counselingSidebarStart"></div>
+        </aside>
+        <section class="book-card">
+          <div class="book-cover-wrap">
+            <img id="counselingCover" alt="" />
+          </div>
+          <div class="book-info">
+            <span class="book-tag">🧠 輔導室公告</span>
+            <h2 class="book-title" id="counselingTitle"></h2>
+            <div class="book-meta" id="counselingCounter"></div>
+          </div>
+        </section>
+        <aside class="book-sidebar book-sidebar--end" data-side="end">
+          <div class="book-sidebar-list" id="counselingSidebarEnd"></div>
+        </aside>
+        <button type="button" id="counselingNext" class="book-nav" aria-label="下一則">›</button>
+      </main>
+      <footer class="books-footer">
+        <div id="counselingDots" class="book-dots"></div>
+      </footer>
+      <div id="counselingMsg" class="msg books-msg hidden"></div>
+    </div>
+
     <script src="campus.js"></script>
     <script src="health.js"></script>
+    <script src="counseling.js"></script>
     <script src="renderer.js"></script>
     <script src="honor.js"></script>
     <script src="books.js"></script>
