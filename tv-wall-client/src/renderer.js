@@ -48,26 +48,31 @@
   const tabChkBooks = $("tabChkBooks");
   const tabChkCampus = $("tabChkCampus");
   const tabChkHealth = $("tabChkHealth");
+  const tabChkCampusHonor = $("tabChkCampusHonor");
   const btnLoadTabs = $("btnLoadTabs");
   const tabNameTv = $("tabNameTv");
   const tabNameBooks = $("tabNameBooks");
   const tabNameCampus = $("tabNameCampus");
   const tabNameHealth = $("tabNameHealth");
   const tabNameCounseling = $("tabNameCounseling");
+  const tabNameCampusHonor = $("tabNameCampusHonor");
   /* 顯示分頁勾選與類型分類的名稱（隨分頁標題變動） */
   const tabLabelTv = $("tabLabelTv");
   const tabLabelBooks = $("tabLabelBooks");
   const tabLabelCampus = $("tabLabelCampus");
   const tabLabelHealth = $("tabLabelHealth");
   const tabLabelCounseling = $("tabLabelCounseling");
+  const tabLabelCampusHonor = $("tabLabelCampusHonor");
   const typeLabelBook = $("typeLabelBook");
   const typeLabelCampus = $("typeLabelCampus");
   const typeLabelHealth = $("typeLabelHealth");
   const typeLabelCounseling = $("typeLabelCounseling");
+  const typeLabelCampusHonor = $("typeLabelCampusHonor");
   const typeLabelBook2 = $("typeLabelBook2");
   const typeLabelCampus2 = $("typeLabelCampus2");
   const typeLabelHealth2 = $("typeLabelHealth2");
   const typeLabelCounseling2 = $("typeLabelCounseling2");
+  const typeLabelCampusHonor2 = $("typeLabelCampusHonor2");
   const btnApplyTabs = $("btnApplyTabs");
   const tabApplyMsg = $("tabApplyMsg");
   const newPasswordInput = $("newPasswordInput");
@@ -433,29 +438,32 @@
   }
 
   /* 分頁標題預設值（公告機未設定時使用） */
-  const DEFAULT_TAB_NAMES = { tv: "精彩槺榔", books: "好書介紹", campus: "校園風雲", health: "衛教宣導", counseling: "輔導室公告" };
+  const DEFAULT_TAB_NAMES = { tv: "精彩槺榔", books: "好書介紹", campus: "校園風雲", health: "衛教宣導", counseling: "輔導室公告", campusHonor: "校園榮譽榜" };
   let currentTabNames = { ...DEFAULT_TAB_NAMES };
 
   /** 依分頁標題更新：顯示分頁勾選名稱、資料傳輸類型分類名稱、上傳區塊標題 */
   function applyTabNamesToUi(names) {
     const n = names || {};
     const pick = (v, k) => (typeof v === "string" && v.trim() ? v.trim().slice(0, 20) : DEFAULT_TAB_NAMES[k]);
-    currentTabNames = { tv: pick(n.tv, "tv"), books: pick(n.books, "books"), campus: pick(n.campus, "campus"), health: pick(n.health, "health"), counseling: pick(n.counseling, "counseling") };
+    currentTabNames = { tv: pick(n.tv, "tv"), books: pick(n.books, "books"), campus: pick(n.campus, "campus"), health: pick(n.health, "health"), counseling: pick(n.counseling, "counseling"), campusHonor: pick(n.campusHonor, "campusHonor") };
     /* 顯示分頁勾選（榮譽榜固定不變） */
     tabLabelTv.textContent = currentTabNames.tv;
     tabLabelBooks.textContent = currentTabNames.books;
     tabLabelCampus.textContent = currentTabNames.campus;
     tabLabelHealth.textContent = currentTabNames.health;
     tabLabelCounseling.textContent = currentTabNames.counseling;
+    tabLabelCampusHonor.textContent = currentTabNames.campusHonor;
     /* 資料傳輸的類型分類（影片／照片固定不變） */
     typeLabelBook.textContent = currentTabNames.books;
     typeLabelCampus.textContent = currentTabNames.campus;
     typeLabelHealth.textContent = currentTabNames.health;
     typeLabelCounseling.textContent = currentTabNames.counseling;
+    typeLabelCampusHonor.textContent = currentTabNames.campusHonor;
     typeLabelBook2.textContent = currentTabNames.books;
     typeLabelCampus2.textContent = currentTabNames.campus;
     typeLabelHealth2.textContent = currentTabNames.health;
     typeLabelCounseling2.textContent = currentTabNames.counseling;
+    typeLabelCampusHonor2.textContent = currentTabNames.campusHonor;
   }
 
   async function loadTabVisibility() {
@@ -471,6 +479,7 @@
       tabChkCampus.checked = tabs.campus !== false;
       tabChkHealth.checked = tabs.health !== false;
       tabChkCounseling.checked = tabs.counseling !== false;
+      tabChkCampusHonor.checked = tabs.campusHonor !== false;
       /* 分頁標題：有設定就填入，沒設定留空（placeholder 顯示預設值） */
       const tn = (data && data.tabNames) || {};
       tabNameTv.value = tn.tv || "";
@@ -478,6 +487,7 @@
       tabNameCampus.value = tn.campus || "";
       tabNameHealth.value = tn.health || "";
       tabNameCounseling.value = tn.counseling || "";
+      tabNameCampusHonor.value = tn.campusHonor || "";
       /* 顯示分頁與類型分類的名稱跟著公告機的標題變動 */
       applyTabNamesToUi(tn);
       tabApplyStatus("已讀取", false);
@@ -501,6 +511,7 @@
       campus: tabChkCampus.checked,
       health: tabChkHealth.checked,
       counseling: tabChkCounseling.checked,
+      campusHonor: tabChkCampusHonor.checked,
     };
     /* 分頁標題：去頭尾空白；空白＝沿用預設名稱 */
     const tabNames = {
@@ -509,6 +520,7 @@
       campus: tabNameCampus.value.trim().slice(0, 20),
       health: tabNameHealth.value.trim().slice(0, 20),
       counseling: tabNameCounseling.value.trim().slice(0, 20),
+      campusHonor: tabNameCampusHonor.value.trim().slice(0, 20),
     };
     /* Content-Type 用 text/plain 以避開跨來源預檢請求（伺服器只解析 JSON 內容） */
     try {

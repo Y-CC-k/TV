@@ -28,16 +28,19 @@
   const tabCampus = $("tabCampus");
   const tabHealth = $("tabHealth");
   const tabCounseling = $("tabCounseling");
+  const tabCampusHonor = $("tabCampusHonor");
   const tabNameTv = $("tabNameTv");
   const tabNameBooks = $("tabNameBooks");
   const tabNameCampus = $("tabNameCampus");
   const tabNameHealth = $("tabNameHealth");
   const tabNameCounseling = $("tabNameCounseling");
+  const tabNameCampusHonor = $("tabNameCampusHonor");
   const tvPage = $("tvPage");
   const booksPage = $("booksPage");
   const campusPage = $("campusPage");
   const healthPage = $("healthPage");
   const counselingPage = $("counselingPage");
+  const campusHonorPage = $("campusHonorPage");
   const serverIpDisplay = $("serverIp");
 
   let videos: MediaItem[] = [];
@@ -51,23 +54,24 @@
   let autoTabTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** 目前分頁 */
-  let currentTab: "tv" | "books" | "campus" | "health" | "counseling" = "tv";
+  let currentTab: "tv" | "books" | "campus" | "health" | "counseling" | "campusHonor" = "tv";
 
   /** 自動切換分頁間隔（1分鐘無操作自動切換，依序 tv → honor → books → campus → health） */
   const AUTO_TAB_MS = 60000;
-  const TAB_CYCLE: Array<"tv" | "books" | "campus" | "health" | "counseling"> = ["tv", "books", "campus", "health", "counseling"];
+  const TAB_CYCLE: Array<"tv" | "books" | "campus" | "health" | "counseling" | "campusHonor"> = ["tv", "books", "campus", "health", "counseling", "campusHonor"];
 
   /** 分頁顯示設定（false＝隱藏；未填視為顯示） */
-  let tabVisibility: TabVisibility = { tv: true, books: true, campus: true, health: true, counseling: true };
+  let tabVisibility: TabVisibility = { tv: true, books: true, campus: true, health: true, counseling: true, campusHonor: true };
 
   /** 過濾出目前允許顯示的分頁（依 config tabs 順序 tv → honor → books） */
-  function visibleTabList(): Array<"tv" | "books" | "campus" | "health" | "counseling"> {
+  function visibleTabList(): Array<"tv" | "books" | "campus" | "health" | "counseling" | "campusHonor"> {
     return TAB_CYCLE.filter((k) => {
       if (k === "tv") return tabVisibility.tv !== false;
       if (k === "books") return tabVisibility.books !== false;
       if (k === "campus") return tabVisibility.campus !== false;
       if (k === "health") return tabVisibility.health !== false;
-      return tabVisibility.counseling !== false;
+      if (k === "counseling") return tabVisibility.counseling !== false;
+      return tabVisibility.campusHonor !== false;
     });
   }
 
@@ -79,12 +83,14 @@
       campus: !t || t.campus !== false,
       health: !t || t.health !== false,
       counseling: !t || t.counseling !== false,
+      campusHonor: !t || t.campusHonor !== false,
     };
     tabTv.classList.toggle("hidden", tabVisibility.tv === false);
     tabBooks.classList.toggle("hidden", tabVisibility.books === false);
     tabCampus.classList.toggle("hidden", tabVisibility.campus === false);
     tabHealth.classList.toggle("hidden", tabVisibility.health === false);
     tabCounseling.classList.toggle("hidden", tabVisibility.counseling === false);
+    tabCampusHonor.classList.toggle("hidden", tabVisibility.campusHonor === false);
     const vis = visibleTabList();
     if (vis.length === 0) {
       tabTv.classList.remove("hidden");
@@ -95,18 +101,19 @@
   }
 
   /** 分頁標題預設值（config.json 的 tabNames 未填時使用） */
-  const DEFAULT_TAB_NAMES: Record<"tv" | "books" | "campus" | "health" | "counseling", string> = {
+  const DEFAULT_TAB_NAMES: Record<"tv" | "books" | "campus" | "health" | "counseling" | "campusHonor", string> = {
     tv: "精彩槺榔",
     books: "好書介紹",
     campus: "校園風雲",
     health: "衛教宣導",
     counseling: "輔導室公告",
+    campusHonor: "校園榮譽榜",
   };
 
   /** 套用分頁標題（空白＝預設名稱） */
-  function applyTabNames(names?: { tv?: string; books?: string; campus?: string; health?: string; counseling?: string }): void {
+  function applyTabNames(names?: { tv?: string; books?: string; campus?: string; health?: string; counseling?: string; campusHonor?: string }): void {
     const n = names || {};
-    const pick = (v: string | undefined, k: "tv" | "books" | "campus" | "health" | "counseling"): string => {
+    const pick = (v: string | undefined, k: "tv" | "books" | "campus" | "health" | "counseling" | "campusHonor"): string => {
       const s = typeof v === "string" ? v.trim().slice(0, 20) : "";
       return s || DEFAULT_TAB_NAMES[k];
     };
@@ -115,6 +122,7 @@
     tabNameCampus.textContent = pick(n.campus, "campus");
     tabNameHealth.textContent = pick(n.health, "health");
     tabNameCounseling.textContent = pick(n.counseling, "counseling");
+    tabNameCampusHonor.textContent = pick(n.campusHonor, "campusHonor");
   }
 
   function stopAutoTabTimer(): void {
@@ -146,7 +154,7 @@
   }
 
   /** 切換分頁：離開電視牆時暫停播放，回來時恢復 */
-  function setTab(name: "tv" | "books" | "campus" | "health" | "counseling"): void {
+  function setTab(name: "tv" | "books" | "campus" | "health" | "counseling" | "campusHonor"): void {
     const prevTab = currentTab;
     currentTab = name;
     document.body.classList.toggle("page-tv", name === "tv");
@@ -154,16 +162,19 @@
     document.body.classList.toggle("page-campus", name === "campus");
     document.body.classList.toggle("page-health", name === "health");
     document.body.classList.toggle("page-counseling", name === "counseling");
+    document.body.classList.toggle("page-campusHonor", name === "campusHonor");
     tvPage.classList.toggle("hidden", name !== "tv");
     booksPage.classList.toggle("hidden", name !== "books");
     campusPage.classList.toggle("hidden", name !== "campus");
     healthPage.classList.toggle("hidden", name !== "health");
     counselingPage.classList.toggle("hidden", name !== "counseling");
+    campusHonorPage.classList.toggle("hidden", name !== "campusHonor");
     tabTv.classList.toggle("active", name === "tv");
     tabBooks.classList.toggle("active", name === "books");
     tabCampus.classList.toggle("active", name === "campus");
     tabHealth.classList.toggle("active", name === "health");
     tabCounseling.classList.toggle("active", name === "counseling");
+    tabCampusHonor.classList.toggle("active", name === "campusHonor");
     if (name === "tv") {
       updateLayout();
       if (videos.length > 0 && !paused) void video.play().catch(() => undefined);
@@ -176,10 +187,12 @@
     if (name === "campus") window.CampusTab?.onShow?.();
     if (name === "health") window.HealthTab?.onShow?.();
     if (name === "counseling") window.CounselingTab?.onShow?.();
+    if (name === "campusHonor") window.CampusHonorTab?.onShow?.();
     if (name !== "books" && prevTab === "books") window.BooksTab?.onHide?.();
     if (name !== "campus" && prevTab === "campus") window.CampusTab?.onHide?.();
     if (name !== "health" && prevTab === "health") window.HealthTab?.onHide?.();
     if (name !== "counseling" && prevTab === "counseling") window.CounselingTab?.onHide?.();
+    if (name !== "campusHonor" && prevTab === "campusHonor") window.CampusHonorTab?.onHide?.();
     resetAutoTabTimer();
   }
 
@@ -187,7 +200,8 @@
   tabBooks.addEventListener("click", () => setTab("books"));
   tabCampus.addEventListener("click", () => setTab("campus"));
   tabHealth.addEventListener("click", () => setTab("health"));
-tabCounseling.addEventListener("click", () => setTab("counseling"));
+  tabCounseling.addEventListener("click", () => setTab("counseling"));
+  tabCampusHonor.addEventListener("click", () => setTab("campusHonor"));
 
   /** 直立＝上下各半、橫向＝左右各半（同原 Python 版） */
   function updateLayout(): void {
@@ -341,6 +355,8 @@ tabCounseling.addEventListener("click", () => setTab("counseling"));
     window.HealthTab?.setItems(result.health ?? []);
     /* 輔導室公告分頁：清單更新 */
     window.CounselingTab?.setItems(result.counseling ?? []);
+    /* 校園榮譽榜分頁：清單更新 */
+    window.CampusHonorTab?.setItems(result.campusHonor ?? []);
     if (paused) {
       video.pause();
       stopTimer();
@@ -369,6 +385,9 @@ tabCounseling.addEventListener("click", () => setTab("counseling"));
         if (currentTab === "counseling") {
           if (window.CounselingTab?.onKey?.(e)) break;
         }
+        if (currentTab === "campusHonor") {
+          if (window.CampusHonorTab?.onKey?.(e)) break;
+        }
         e.preventDefault();
         togglePause();
         break;
@@ -382,6 +401,10 @@ tabCounseling.addEventListener("click", () => setTab("counseling"));
           window.CounselingTab?.onKey?.(e);
           break;
         }
+        if (currentTab === "campusHonor") {
+          window.CampusHonorTab?.onKey?.(e);
+          break;
+        }
         e.preventDefault();
         manualStep(1);
         break;
@@ -393,6 +416,10 @@ tabCounseling.addEventListener("click", () => setTab("counseling"));
         }
         if (currentTab === "counseling") {
           window.CounselingTab?.onKey?.(e);
+          break;
+        }
+        if (currentTab === "campusHonor") {
+          window.CampusHonorTab?.onKey?.(e);
           break;
         }
         e.preventDefault();
@@ -460,6 +487,13 @@ tabCounseling.addEventListener("click", () => setTab("counseling"));
     window.COUNSELING_SETTINGS = counselingSettings;
     window.CounselingTab?.init?.(counselingSettings);
 
+    /* 校園榮譽榜分頁設定注入 */
+    const campusHonorSettings: BookSettings = {
+      intervalMs: (cfg as Partial<AppConfig> & { campusHonorIntervalMs?: number }).campusHonorIntervalMs ?? cfg.bookIntervalMs,
+    };
+    window.CAMPUSHONOR_SETTINGS = campusHonorSettings;
+    window.CampusHonorTab?.init?.(campusHonorSettings);
+
     /* 套用分頁顯示／隱藏設定（config.json 的 tabs 區塊） */
     const bootTabs = (cfg as Partial<AppConfig> & { tabs?: TabVisibility }).tabs;
     applyTabs(bootTabs);
@@ -471,7 +505,7 @@ tabCounseling.addEventListener("click", () => setTab("counseling"));
 
     /* 預設分頁：只選目前允許顯示的分頁 */
     const vis = visibleTabList();
-    let startTab: "tv" | "books" | "campus" | "health" | "counseling" = "tv";
+    let startTab: "tv" | "books" | "campus" | "health" | "counseling" | "campusHonor" = "tv";
     if (vis.length > 0 && !vis.includes("tv")) startTab = vis[0];
     setTab(startTab);
     if (startTab === "tv") {

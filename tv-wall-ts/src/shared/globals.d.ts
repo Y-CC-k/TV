@@ -27,6 +27,8 @@ interface AppConfig {
   healthIntervalMs?: number;
   /** 輔導室公告每頁停留毫秒 */
   counselingIntervalMs?: number;
+  /** 校園榮譽榜每頁停留毫秒 */
+  campusHonorIntervalMs?: number;
   /** 影片填滿窗格的方式 */
   videoFit: FitMode;
   /** 圖片填滿窗格的方式 */
@@ -53,6 +55,8 @@ interface TabVisibility {
   health?: boolean;
   /** 輔導室公告（預設 true） */
   counseling?: boolean;
+  /** 校園榮譽榜（預設 true） */
+  campusHonor?: boolean;
 }
 
 /** 分頁標題（config.json 的 tabNames 區塊；空白＝用預設名稱） */
@@ -67,6 +71,8 @@ interface TabNames {
   health?: string;
   /** 輔導室公告（預設「輔導室公告」） */
   counseling?: string;
+  /** 校園榮譽榜（預設「校園榮譽榜」） */
+  campusHonor?: string;
 }
 
 /** 掃描結果 */
@@ -81,6 +87,8 @@ interface ScanResult {
   health: MediaItem[];
   /** 輔導室公告圖片（counseling 資料夾） */
   counseling: MediaItem[];
+  /** 校園榮譽榜圖片（campusHonor 資料夾） */
+  campusHonor: MediaItem[];
 }
 
 /** 好書介紹分頁的注入設定（renderer.ts 於 init 時設定） */
@@ -129,6 +137,14 @@ interface Window {
   };
   HEALTH_SETTINGS?: BookSettings;
   COUNSELING_SETTINGS?: BookSettings;
+  CampusHonorTab?: {
+    init(settings: BookSettings): void;
+    setItems(items: MediaItem[]): void;
+    onShow(): void;
+    onHide(): void;
+    onKey(e: KeyboardEvent): boolean;
+  };
+  CAMPUSHONOR_SETTINGS?: BookSettings;
   HealthTab?: {
     init(settings: BookSettings): void;
     /** 掃描結果更新（含剛啟動第一次） */

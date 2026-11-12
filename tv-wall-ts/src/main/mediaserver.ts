@@ -25,6 +25,8 @@ export interface MediaServerOptions {
   healthDir?: string;
   /** 輔導室公告圖片資料夾（counseling 分頁；未提供＝不服務此分類） */
   counselingDir?: string;
+  /** 校園榮譽榜圖片資料夾（campusHonor 分頁；未提供＝不服務此分類） */
+  campusHonorDir?: string;
   port: number;
   /** config.json 的完整路徑（提供時啟用 GET /config 與 POST /config 修改分頁顯示設定） */
   configPath?: string;
@@ -33,37 +35,39 @@ export interface MediaServerOptions {
 }
 
 /** tabs：正規化分頁顯示設定（未填視為顯示；允許 tv／honor／books／campus／health 五個鍵） */
-function normalizeTabs(raw: unknown): { tv: boolean; honor: boolean; books: boolean; campus: boolean; health: boolean; counseling: boolean } {
+function normalizeTabs(raw: unknown): { tv: boolean; books: boolean; campus: boolean; health: boolean; counseling: boolean; campusHonor: boolean } {
   const t = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
   return {
     tv: t.tv !== false,
-    honor: t.honor !== false,
     books: t.books !== false,
     campus: t.campus !== false,
     health: t.health !== false,
     counseling: t.counseling !== false,
+    campusHonor: t.campusHonor !== false,
   };
 }
 
 /** tabNames：正規化分頁標題（去頭尾空白、最長 20 字；空白鍵略過＝用預設名稱） */
-function normalizeTabNames(raw: unknown): { tv?: string; books?: string; campus?: string; health?: string; counseling?: string } {
+function normalizeTabNames(raw: unknown): { tv?: string; books?: string; campus?: string; health?: string; counseling?: string; campusHonor?: string } {
   const t = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
   const norm = (v: unknown): string | undefined => {
     if (typeof v !== "string") return undefined;
     const s = v.trim().slice(0, 20);
     return s || undefined;
   };
-  const out: { tv?: string; books?: string; campus?: string; health?: string; counseling?: string } = {};
+  const out: { tv?: string; books?: string; campus?: string; health?: string; counseling?: string; campusHonor?: string } = {};
   const tv = norm(t.tv);
   const books = norm(t.books);
   const campus = norm(t.campus);
   const health = norm(t.health);
   const counseling = norm(t.counseling);
+  const campusHonor = norm(t.campusHonor);
   if (tv) out.tv = tv;
   if (books) out.books = books;
   if (campus) out.campus = campus;
   if (health) out.health = health;
   if (counseling) out.counseling = counseling;
+  if (campusHonor) out.campusHonor = campusHonor;
   return out;
 }
 
@@ -163,6 +167,7 @@ function dirForKind(kind: string, o: MediaServerOptions): string | null {
   if (kind === "campus") return o.campusDir ?? null;
   if (kind === "health") return o.healthDir ?? null;
   if (kind === "counseling") return o.counselingDir ?? null;
+  if (kind === "campusHonor") return o.campusHonorDir ?? null;
   return null;
 }
 
@@ -247,16 +252,17 @@ export function startMediaServer(o: MediaServerOptions): void {
 
             // 每個檔案可對應各自的 type，沒給則用預設
             const rawType = types[i] || defaultType;
-            const fileType: "video" | "image" | "book" | "campus" | "health" | "counseling" =
-              rawType === "video" ? "video" : rawType === "book" ? "book" : rawType === "campus" ? "campus" : rawType === "health" ? "health" : rawType === "counseling" ? "counseling" : "image";
+            const fileType: "video" | "image" | "book" | "campus" | "health" | "counseling" | "campusHonor" =
+              rawType === "video" ? "video" : rawType === "book" ? "book" : rawType === "campus" ? "campus" : rawType === "health" ? "health" : rawType === "counseling" ? "counseling" : rawType === "campusHonor" ? "campusHonor" : "image";
             const targetDir =
               fileType === "video" ? o.videoDir
               : fileType === "book" ? o.booksDir
               : fileType === "campus" ? o.campusDir
               : fileType === "health" ? o.healthDir
                : fileType === "counseling" ? o.counselingDir
+               : fileType === "campusHonor" ? o.campusHonorDir
               : o.imagesDir;
-            const allowedExts = fileType === "image" || fileType === "book" || fileType === "campus" || fileType === "health" || fileType === "counseling" ? IMAGE_EXTS : VIDEO_EXTS;
+            const allowedExts = fileType === "image" || fileType === "book" || fileType === "campus" || fileType === "health" || fileType === "counseling" || fileType === "campusHonor" ? IMAGE_EXTS : VIDEO_EXTS;
 
             if (!targetDir) {
               hasError = true;
@@ -302,7 +308,7 @@ export function startMediaServer(o: MediaServerOptions): void {
               results.push({
                 ok: true,
                 name: saveName,
-                path: (fileType === "video" ? "videos/" : fileType === "book" ? "books/" : fileType === "campus" ? "campus/" : fileType === "health" ? "health/" : fileType === "counseling" ? "counseling/" : "images/") + saveName,
+                path: (fileType === "video" ? "videos/" : fileType === "book" ? "books/" : fileType === "campus" ? "campus/" : fileType === "health" ? "health/" : fileType === "counseling" ? "counseling/" : fileType === "campusHonor" ? "campusHonor/" : "images/") + saveName,
                 size: stat.size,
                 hash: info.hash,
                 type: fileType,
@@ -401,13 +407,14 @@ export function startMediaServer(o: MediaServerOptions): void {
 
       /* ---------- 檔案清單（供用戶端 GUI 顯示） ---------- */
       if (pathname === "/files" && req.method === "GET") {
-        const [videos, images, books, campus, health, counseling] = await Promise.all([
+        const [videos, images, books, campus, health, counseling, campusHonor] = await Promise.all([
           buildList(o.videoDir, VIDEO_EXTS),
           buildList(o.imagesDir, IMAGE_EXTS),
           o.booksDir ? buildList(o.booksDir, IMAGE_EXTS) : Promise.resolve([]),
           o.campusDir ? buildList(o.campusDir, IMAGE_EXTS) : Promise.resolve([]),
           o.healthDir ? buildList(o.healthDir, IMAGE_EXTS) : Promise.resolve([]),
           o.counselingDir ? buildList(o.counselingDir, IMAGE_EXTS) : Promise.resolve([]),
+          o.campusHonorDir ? buildList(o.campusHonorDir, IMAGE_EXTS) : Promise.resolve([]),
         ]);
         sendJson(res, {
           videos: videos.map(f => ({ name: path.basename(f.path), size: f.size, type: "video", path: f.path })),
@@ -416,20 +423,22 @@ export function startMediaServer(o: MediaServerOptions): void {
           campus: campus.map(f => ({ name: path.basename(f.path), size: f.size, type: "campus", path: f.path })),
           health: health.map(f => ({ name: path.basename(f.path), size: f.size, type: "health", path: f.path })),
           counseling: counseling.map(f => ({ name: path.basename(f.path), size: f.size, type: "counseling", path: f.path })),
+          campusHonor: campusHonor.map(f => ({ name: path.basename(f.path), size: f.size, type: "campusHonor", path: f.path })),
         });
         return;
       }
 
       if (pathname === "/manifest") {
-        const [videos, images, books, campus, health, counseling] = await Promise.all([
+        const [videos, images, books, campus, health, counseling, campusHonor] = await Promise.all([
           buildList(o.videoDir, VIDEO_EXTS),
           buildList(o.imagesDir, IMAGE_EXTS),
           o.booksDir ? buildList(o.booksDir, IMAGE_EXTS) : Promise.resolve([]),
           o.campusDir ? buildList(o.campusDir, IMAGE_EXTS) : Promise.resolve([]),
           o.healthDir ? buildList(o.healthDir, IMAGE_EXTS) : Promise.resolve([]),
           o.counselingDir ? buildList(o.counselingDir, IMAGE_EXTS) : Promise.resolve([]),
+          o.campusHonorDir ? buildList(o.campusHonorDir, IMAGE_EXTS) : Promise.resolve([]),
         ]);
-        sendJson(res, { videos, images, books, campus, health, counseling });
+        sendJson(res, { videos, images, books, campus, health, counseling, campusHonor });
         return;
       }
 
