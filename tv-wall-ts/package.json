@@ -5,7 +5,7 @@
   "private": true,
   "main": "dist/main/main.js",
   "scripts": {
-    "build": "node scripts/make-icon.mjs && tsc -p tsconfig.json && node scripts/copy-static.js",
+    "build": "node scripts/clean-dist.js && node scripts/make-icon.mjs && tsc -p tsconfig.json && node scripts/copy-static.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "start": "electron .",
     "dev": "npm run build && electron .",

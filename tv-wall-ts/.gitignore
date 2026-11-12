@@ -6,3 +6,8 @@ server.json
 sync-meta.json
 shot.png
 server-media/
+
+# 執行期產生的除錯／狀態檔（可能含金鑰，不可提交）
+tvwall-config-debug.json
+tvwall-config-debug.log
+state.json

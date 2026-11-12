@@ -13,6 +13,7 @@ import * as os from "os";
 import * as path from "path";
 import formidable from "formidable";
 import { IMAGE_EXTS, VIDEO_EXTS } from "./media";
+import { normalizeTabs, normalizeTabNames } from "./tabconfig";
 
 export interface MediaServerOptions {
   videoDir: string;
@@ -34,42 +35,7 @@ export interface MediaServerOptions {
   onUploaded?: () => void;
 }
 
-/** tabs：正規化分頁顯示設定（未填視為顯示；允許 tv／honor／books／campus／health 五個鍵） */
-function normalizeTabs(raw: unknown): { tv: boolean; books: boolean; campus: boolean; health: boolean; counseling: boolean; campusHonor: boolean } {
-  const t = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
-  return {
-    tv: t.tv !== false,
-    books: t.books !== false,
-    campus: t.campus !== false,
-    health: t.health !== false,
-    counseling: t.counseling !== false,
-    campusHonor: t.campusHonor !== false,
-  };
-}
-
-/** tabNames：正規化分頁標題（去頭尾空白、最長 20 字；空白鍵略過＝用預設名稱） */
-function normalizeTabNames(raw: unknown): { tv?: string; books?: string; campus?: string; health?: string; counseling?: string; campusHonor?: string } {
-  const t = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
-  const norm = (v: unknown): string | undefined => {
-    if (typeof v !== "string") return undefined;
-    const s = v.trim().slice(0, 20);
-    return s || undefined;
-  };
-  const out: { tv?: string; books?: string; campus?: string; health?: string; counseling?: string; campusHonor?: string } = {};
-  const tv = norm(t.tv);
-  const books = norm(t.books);
-  const campus = norm(t.campus);
-  const health = norm(t.health);
-  const counseling = norm(t.counseling);
-  const campusHonor = norm(t.campusHonor);
-  if (tv) out.tv = tv;
-  if (books) out.books = books;
-  if (campus) out.campus = campus;
-  if (health) out.health = health;
-  if (counseling) out.counseling = counseling;
-  if (campusHonor) out.campusHonor = campusHonor;
-  return out;
-}
+/* 分頁顯示設定（tabs／tabNames）的正規化集中在 tabconfig.ts，與主程序共用同一套規則 */
 
 const CONTENT_TYPES: Record<string, string> = {
   ".mp4": "video/mp4",

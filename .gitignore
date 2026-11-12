@@ -5,3 +5,7 @@ tv-wall-ts/state.json
 tv-wall-client/config.json
 tv-wall-client/client.log
 tv-wall-ts/client.log
+
+tv-wall-ts/tvwall-config-debug.json
+tv-wall-ts/tvwall-config-debug.log
+tv-wall-ts/state.json

@@ -5,6 +5,7 @@ import * as path from "path";
 import { pathToFileURL } from "url";
 import { IMAGE_EXTS, VIDEO_EXTS } from "./media";
 import { startMediaServer } from "./mediaserver";
+import { normalizeTabs, resolveTabNames } from "./tabconfig";
 
 /** 除錯用：在頁面內取得播放狀態（TVWALL_DUMP） */
 const DIAG_JS = `(() => {
@@ -88,7 +89,7 @@ interface FileConfig {
   serverMode?: boolean;
   /** 內建伺服器使用的連接埠 */
   serverPort?: number;
-  /** 啟動時的預設分頁："tv" 或 "honor" */
+  /** 啟動時的預設分頁（目前固定 "tv"，保留欄位僅為相容舊設定檔） */
   defaultTab?: string;
   /** 各分頁顯示／隱藏（false＝隱藏；未填視為顯示） */
   tabs?: TabVisibility;
@@ -133,10 +134,7 @@ function resolveConfig(): ResolvedConfig {
     }
   }
   if (!readPath) {
-    // 記錄讀取失敗，方便除錯
-    try {
-      fs.appendFileSync(path.join(root, "tvwall-config-debug.log"), new Date().toISOString() + " config.json not found at " + candidatePaths.join(", ") + "\n");
-    } catch { }
+    console.warn(`[config] 找不到 config.json（已嘗試：${candidatePaths.join("、")}），使用預設值`);
   }
 
   const dir = (value: string | undefined, fallback: string): string => {
@@ -152,20 +150,8 @@ function resolveConfig(): ResolvedConfig {
   const counselingDir = dir(raw.counselingDir, "counseling");
   const campusHonorDir = dir(raw.campusHonorDir, "campusHonor");
 
-  /* 分頁標題：未填或空白時用預設名稱 */
-  const tn = raw.tabNames && typeof raw.tabNames === "object" ? raw.tabNames : {};
-  const tabName = (value: string | undefined, fallback: string): string => {
-    const v = typeof value === "string" ? value.trim() : "";
-    return v ? v.slice(0, 20) : fallback;
-  };
-  const tabNames = {
-    tv: tabName(tn.tv, "精彩槺榔"),
-    books: tabName(tn.books, "好書介紹"),
-    campus: tabName(tn.campus, "校園風雲"),
-    health: tabName(tn.health, "衛教宣導"),
-    counseling: tabName(tn.counseling, "輔導室公告"),
-    campusHonor: tabName(tn.campusHonor, "校園榮譽榜"),
-  };
+  /* 分頁標題：未填或空白時用預設名稱（規則集中在 tabconfig.ts） */
+  const tabNames = resolveTabNames(raw.tabNames);
 
   return {
     configPath: readPath,
@@ -207,17 +193,7 @@ function resolveConfig(): ResolvedConfig {
       typeof raw.serverPort === "number" && raw.serverPort > 0 ? raw.serverPort : 8123,
     tabNames,
     defaultTab: "tv",
-    tabs:
-      raw.tabs && typeof raw.tabs === "object"
-        ? {
-            tv: raw.tabs.tv !== false,
-            books: raw.tabs.books !== false,
-            campus: raw.tabs.campus !== false,
-            health: raw.tabs.health !== false,
-            counseling: raw.tabs.counseling !== false,
-            campusHonor: raw.tabs.campusHonor !== false,
-          }
-        : { tv: true, books: true, campus: true, health: true, counseling: true, campusHonor: true },
+    tabs: normalizeTabs(raw.tabs),
   };
 }
 
@@ -331,19 +307,7 @@ function setupIpc(): void {
     } as ScanResult;
   });
 
-  ipcMain.handle("config", () => {
-    const resolved = resolveConfig() as ResolvedConfig & { _debugRoot?: string };
-    const cfg = publicConfig(resolved);
-    try {
-      const debug = {
-        ...cfg,
-        _debugRoot: resolved._debugRoot,
-        _rawDefaultTab: resolved.defaultTab,
-      };
-      fs.writeFileSync(path.join(appRoot(), "tvwall-config-debug.json"), JSON.stringify(debug, null, 2));
-    } catch { }
-    return cfg;
-  });
+  ipcMain.handle("config", () => publicConfig(resolveConfig()));
 
   ipcMain.handle("close", () => {
     if (win && !win.isDestroyed()) win.close();
@@ -386,7 +350,7 @@ function createWindow(): void {
   const dump = process.env.TVWALL_DUMP;
   if (shot || dump) {
     win.webContents.once("did-finish-load", () => {
-      /* 除錯：TVWALL_TAB=tv|honor|books → 載入後自動切到該分頁（配合截圖） */
+      /* 除錯：TVWALL_TAB=books → 載入後自動切到好書介紹分頁（配合截圖） */
       const tabTest = (process.env.TVWALL_TAB || "").toLowerCase();
       if (tabTest === "books") {
         void win?.webContents.executeJavaScript(
@@ -465,28 +429,12 @@ if (!gotLock) {
             try {
               /* 讀檔失敗（可能還在寫入）就等下一次變更 */
               const raw = JSON.parse(fs.readFileSync(bootCfg.configPath, "utf8").replace(/^\uFEFF/, "")) as FileConfig;
-              const tabs = {
-                tv: raw.tabs ? raw.tabs.tv !== false : true,
-                books: raw.tabs ? raw.tabs.books !== false : true,
-                campus: raw.tabs ? raw.tabs.campus !== false : true,
-                health: raw.tabs ? raw.tabs.health !== false : true,
-                counseling: raw.tabs ? raw.tabs.counseling !== false : true,
-                campusHonor: raw.tabs ? raw.tabs.campusHonor !== false : true,
-              };
-              const tn = raw.tabNames && typeof raw.tabNames === "object" ? raw.tabNames : {};
-              const tabName = (value: string | undefined, fallback: string): string => {
-                const v = typeof value === "string" ? value.trim() : "";
-                return v ? v.slice(0, 20) : fallback;
-              };
-              const tabNames = {
-                tv: tabName(tn.tv, "精彩槺榔"),
-                books: tabName(tn.books, "好書介紹"),
-                campus: tabName(tn.campus, "校園風雲"),
-                health: tabName(tn.health, "衛教宣導"),
-                counseling: tabName(tn.counseling, "輔導室公告"),
-                campusHonor: tabName(tn.campusHonor, "校園榮譽榜"),
-              };
-              win?.webContents.send("config-updated", { tabs, tabNames, defaultTab: "tv" });
+              /* 與 resolveConfig 使用同一套正規化規則（tabconfig.ts） */
+              win?.webContents.send("config-updated", {
+                tabs: normalizeTabs(raw.tabs),
+                tabNames: resolveTabNames(raw.tabNames),
+                defaultTab: "tv",
+              });
             } catch {
               /* 讀取失敗：略過 */
             }
