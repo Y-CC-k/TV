@@ -111,55 +111,51 @@ interface TvWallApi {
 
 declare const tvwall: TvWallApi;
 
-/** 積點排行與好書介紹設定（renderer.ts 於 init 時注入） */
+/** 卡片分頁模版的設定（cardTabs.js 註冊用；版面與行為由 cardTabTemplate.js 統一產生） */
+interface CardTabDef {
+  /** 分頁代號（＝伺服器資料夾名稱，例如 "campusHonor"） */
+  key: string;
+  /** 分頁圖示（emoji） */
+  icon: string;
+  /** 預設標題（用戶端可遠端改名） */
+  name: string;
+  /** 計數單位（預設「本」） */
+  unit?: string;
+  /** 空清單訊息（預設統一文案） */
+  emptyMsg?: string;
+  /** config.json 的間隔欄位名（預設 key + "IntervalMs"） */
+  intervalKey?: string;
+}
+
+/** 卡片分頁模版產生的實例（cardTabTemplate.js 回傳） */
+interface CardTabInstance {
+  key: string;
+  name: string;
+  /** config.json 的間隔欄位名（renderer.ts 讀取每頁停留毫秒用） */
+  intervalKey: string | null;
+  /** 模版產生的分頁按鈕與頁面元素 */
+  tabButton: HTMLButtonElement;
+  page: HTMLElement;
+  /** 分頁按鈕點擊回呼（renderer.ts 指定） */
+  onSelect: (() => void) | null;
+  /** 遠端更名：同時更新分頁按鈕與卡片標籤 */
+  setName(name: string): void;
+  /** 顯示／隱藏分頁按鈕 */
+  setVisible(visible: boolean): void;
+  init(settings: BookSettings): void;
+  /** 掃描結果更新（含剛啟動第一次） */
+  setItems(items: MediaItem[]): void;
+  /** 分頁切換 */
+  onShow(): void;
+  onHide(): void;
+  /** 分頁內鍵盤事件（Escape／F11 由 renderer 處理，其餘在此處理） */
+  onKey(e: KeyboardEvent): boolean;
+}
+
+/** 卡片分頁模版（cardTabTemplate.js 提供；renderer.ts 於 init 時驅動） */
 interface Window {
-  BOOK_SETTINGS?: BookSettings;
-  BooksTab?: {
-    init(settings: BookSettings): void;
-    /** 掃描結果更新（含剛啟動第一次） */
-    setItems(items: MediaItem[]): void;
-    /** 分頁切換 */
-    onShow(): void;
-    onHide(): void;
-    /** 分頁內鍵盤事件（Escape／F11 由 renderer 處理，其餘在此處理） */
-    onKey(e: KeyboardEvent): boolean;
-  };
-  CAMPUS_SETTINGS?: BookSettings;
-  CampusTab?: {
-    init(settings: BookSettings): void;
-    /** 掃描結果更新（含剛啟動第一次） */
-    setItems(items: MediaItem[]): void;
-    /** 分頁切換 */
-    onShow(): void;
-    onHide(): void;
-    /** 分頁內鍵盤事件（Escape／F11 由 renderer 處理，其餘在此處理） */
-    onKey(e: KeyboardEvent): boolean;
-  };
-  HEALTH_SETTINGS?: BookSettings;
-  COUNSELING_SETTINGS?: BookSettings;
-  CampusHonorTab?: {
-    init(settings: BookSettings): void;
-    setItems(items: MediaItem[]): void;
-    onShow(): void;
-    onHide(): void;
-    onKey(e: KeyboardEvent): boolean;
-  };
-  CAMPUSHONOR_SETTINGS?: BookSettings;
-  HealthTab?: {
-    init(settings: BookSettings): void;
-    /** 掃描結果更新（含剛啟動第一次） */
-    setItems(items: MediaItem[]): void;
-    /** 分頁切換 */
-    onShow(): void;
-    onHide(): void;
-    /** 分頁內鍵盤事件（Escape／F11 由 renderer 處理，其餘在此處理） */
-    onKey(e: KeyboardEvent): boolean;
-  };
-  CounselingTab?: {
-    init(settings: BookSettings): void;
-    setItems(items: MediaItem[]): void;
-    onShow(): void;
-    onHide(): void;
-    onKey(e: KeyboardEvent): boolean;
-  };
+  createCardTab(def: CardTabDef): CardTabInstance;
+  /** cardTabs.js 依註冊清單產生的分頁實例（順序＝分頁按鈕順序） */
+  CARD_TAB_INSTANCES?: CardTabInstance[];
+  CARD_TAB_DEFS?: CardTabDef[];
 }

@@ -24,24 +24,16 @@
   const imageMsg = $("imageMsg");
   const tabBar = $("tabBar");
   const tabTv = $("tabTv");
-  const tabBooks = $("tabBooks");
-  const tabCampus = $("tabCampus");
-  const tabHealth = $("tabHealth");
-  const tabCounseling = $("tabCounseling");
-  const tabCampusHonor = $("tabCampusHonor");
   const tabNameTv = $("tabNameTv");
-  const tabNameBooks = $("tabNameBooks");
-  const tabNameCampus = $("tabNameCampus");
-  const tabNameHealth = $("tabNameHealth");
-  const tabNameCounseling = $("tabNameCounseling");
-  const tabNameCampusHonor = $("tabNameCampusHonor");
   const tvPage = $("tvPage");
-  const booksPage = $("booksPage");
-  const campusPage = $("campusPage");
-  const healthPage = $("healthPage");
-  const counselingPage = $("counselingPage");
-  const campusHonorPage = $("campusHonorPage");
   const serverIpDisplay = $("serverIp");
+
+  /* ---------- 卡片分頁（由 cardTabTemplate.js + cardTabs.js 模版產生） ---------- */
+  const cardTabs: CardTabInstance[] = Array.isArray(window.CARD_TAB_INSTANCES) ? window.CARD_TAB_INSTANCES : [];
+  const cardTabByKey: Record<string, CardTabInstance> = {};
+  for (const t of cardTabs) cardTabByKey[t.key] = t;
+  /* 分頁按鈕點擊 → 切換分頁（按鈕由模版建立並自行綁定 click → onSelect） */
+  for (const t of cardTabs) t.onSelect = () => setTab(t.key);
 
   let videos: MediaItem[] = [];
   let images: MediaItem[] = [];
@@ -54,43 +46,30 @@
   let autoTabTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** 目前分頁 */
-  let currentTab: "tv" | "books" | "campus" | "health" | "counseling" | "campusHonor" = "tv";
+  let currentTab: string = "tv";
 
-  /** 自動切換分頁間隔（1分鐘無操作自動切換，依序 tv → honor → books → campus → health） */
+  /** 自動切換分頁間隔（1分鐘無操作自動切換，依 TAB_CYCLE 順序） */
   const AUTO_TAB_MS = 60000;
-  const TAB_CYCLE: Array<"tv" | "books" | "campus" | "health" | "counseling" | "campusHonor"> = ["tv", "books", "campus", "health", "counseling", "campusHonor"];
+  /** 分頁循環順序：分頁一（電視牆）固定在最前，其後依 cardTabs.js 註冊順序 */
+  const TAB_CYCLE: string[] = ["tv"].concat(cardTabs.map((t) => t.key));
 
   /** 分頁顯示設定（false＝隱藏；未填視為顯示） */
-  let tabVisibility: TabVisibility = { tv: true, books: true, campus: true, health: true, counseling: true, campusHonor: true };
+  let tabVisibility: Record<string, boolean> = {};
 
-  /** 過濾出目前允許顯示的分頁（依 config tabs 順序 tv → honor → books） */
-  function visibleTabList(): Array<"tv" | "books" | "campus" | "health" | "counseling" | "campusHonor"> {
-    return TAB_CYCLE.filter((k) => {
-      if (k === "tv") return tabVisibility.tv !== false;
-      if (k === "books") return tabVisibility.books !== false;
-      if (k === "campus") return tabVisibility.campus !== false;
-      if (k === "health") return tabVisibility.health !== false;
-      if (k === "counseling") return tabVisibility.counseling !== false;
-      return tabVisibility.campusHonor !== false;
-    });
+  /** 過濾出目前允許顯示的分頁 */
+  function visibleTabList(): string[] {
+    return TAB_CYCLE.filter((k) => tabVisibility[k] !== false);
   }
 
   /** 套用分頁顯示／隱藏設定；目前所在分頁被隱藏時切到第一個可見分頁 */
   function applyTabs(t?: TabVisibility): void {
-    tabVisibility = {
-      tv: !t || t.tv !== false,
-      books: !t || t.books !== false,
-      campus: !t || t.campus !== false,
-      health: !t || t.health !== false,
-      counseling: !t || t.counseling !== false,
-      campusHonor: !t || t.campusHonor !== false,
-    };
+    tabVisibility = {};
+    for (const k of TAB_CYCLE) {
+      const v = t ? (t as unknown as Record<string, boolean | undefined>)[k] : undefined;
+      tabVisibility[k] = v !== false;
+    }
     tabTv.classList.toggle("hidden", tabVisibility.tv === false);
-    tabBooks.classList.toggle("hidden", tabVisibility.books === false);
-    tabCampus.classList.toggle("hidden", tabVisibility.campus === false);
-    tabHealth.classList.toggle("hidden", tabVisibility.health === false);
-    tabCounseling.classList.toggle("hidden", tabVisibility.counseling === false);
-    tabCampusHonor.classList.toggle("hidden", tabVisibility.campusHonor === false);
+    for (const t2 of cardTabs) t2.setVisible(tabVisibility[t2.key] !== false);
     const vis = visibleTabList();
     if (vis.length === 0) {
       tabTv.classList.remove("hidden");
@@ -100,29 +79,19 @@
     if (!vis.includes(currentTab)) setTab(vis[0]);
   }
 
-  /** 分頁標題預設值（config.json 的 tabNames 未填時使用） */
-  const DEFAULT_TAB_NAMES: Record<"tv" | "books" | "campus" | "health" | "counseling" | "campusHonor", string> = {
-    tv: "精彩槺榔",
-    books: "好書介紹",
-    campus: "校園風雲",
-    health: "衛教宣導",
-    counseling: "輔導室公告",
-    campusHonor: "校園榮譽榜",
-  };
+  /** 分頁標題預設值（config.json 的 tabNames 未填時使用；來自 cardTabs.js 註冊清單） */
+  const DEFAULT_TAB_NAMES: Record<string, string> = { tv: "精彩槺榔" };
+  for (const t of cardTabs) DEFAULT_TAB_NAMES[t.key] = t.name;
 
-  /** 套用分頁標題（空白＝預設名稱） */
-  function applyTabNames(names?: { tv?: string; books?: string; campus?: string; health?: string; counseling?: string; campusHonor?: string }): void {
-    const n = names || {};
-    const pick = (v: string | undefined, k: "tv" | "books" | "campus" | "health" | "counseling" | "campusHonor"): string => {
+  /** 套用分頁標題（空白＝預設名稱）；卡片分頁同時更新分頁按鈕與卡片標籤 */
+  function applyTabNames(names?: TabNames): void {
+    const n = (names || {}) as Record<string, string | undefined>;
+    const pick = (v: string | undefined, fallback: string): string => {
       const s = typeof v === "string" ? v.trim().slice(0, 20) : "";
-      return s || DEFAULT_TAB_NAMES[k];
+      return s || fallback;
     };
-    tabNameTv.textContent = pick(n.tv, "tv");
-    tabNameBooks.textContent = pick(n.books, "books");
-    tabNameCampus.textContent = pick(n.campus, "campus");
-    tabNameHealth.textContent = pick(n.health, "health");
-    tabNameCounseling.textContent = pick(n.counseling, "counseling");
-    tabNameCampusHonor.textContent = pick(n.campusHonor, "campusHonor");
+    tabNameTv.textContent = pick(n.tv, DEFAULT_TAB_NAMES.tv);
+    for (const t of cardTabs) t.setName(pick(n[t.key], DEFAULT_TAB_NAMES[t.key]));
   }
 
   function stopAutoTabTimer(): void {
@@ -154,27 +123,16 @@
   }
 
   /** 切換分頁：離開電視牆時暫停播放，回來時恢復 */
-  function setTab(name: "tv" | "books" | "campus" | "health" | "counseling" | "campusHonor"): void {
+  function setTab(name: string): void {
     const prevTab = currentTab;
     currentTab = name;
-    document.body.classList.toggle("page-tv", name === "tv");
-    document.body.classList.toggle("page-books", name === "books");
-    document.body.classList.toggle("page-campus", name === "campus");
-    document.body.classList.toggle("page-health", name === "health");
-    document.body.classList.toggle("page-counseling", name === "counseling");
-    document.body.classList.toggle("page-campusHonor", name === "campusHonor");
+    for (const k of TAB_CYCLE) document.body.classList.toggle("page-" + k, k === name);
     tvPage.classList.toggle("hidden", name !== "tv");
-    booksPage.classList.toggle("hidden", name !== "books");
-    campusPage.classList.toggle("hidden", name !== "campus");
-    healthPage.classList.toggle("hidden", name !== "health");
-    counselingPage.classList.toggle("hidden", name !== "counseling");
-    campusHonorPage.classList.toggle("hidden", name !== "campusHonor");
     tabTv.classList.toggle("active", name === "tv");
-    tabBooks.classList.toggle("active", name === "books");
-    tabCampus.classList.toggle("active", name === "campus");
-    tabHealth.classList.toggle("active", name === "health");
-    tabCounseling.classList.toggle("active", name === "counseling");
-    tabCampusHonor.classList.toggle("active", name === "campusHonor");
+    for (const t of cardTabs) {
+      t.page.classList.toggle("hidden", name !== t.key);
+      t.tabButton.classList.toggle("active", name === t.key);
+    }
     if (name === "tv") {
       updateLayout();
       if (videos.length > 0 && !paused) void video.play().catch(() => undefined);
@@ -183,25 +141,14 @@
       video.pause();
       stopTimer();
     }
-    if (name === "books") window.BooksTab?.onShow?.();
-    if (name === "campus") window.CampusTab?.onShow?.();
-    if (name === "health") window.HealthTab?.onShow?.();
-    if (name === "counseling") window.CounselingTab?.onShow?.();
-    if (name === "campusHonor") window.CampusHonorTab?.onShow?.();
-    if (name !== "books" && prevTab === "books") window.BooksTab?.onHide?.();
-    if (name !== "campus" && prevTab === "campus") window.CampusTab?.onHide?.();
-    if (name !== "health" && prevTab === "health") window.HealthTab?.onHide?.();
-    if (name !== "counseling" && prevTab === "counseling") window.CounselingTab?.onHide?.();
-    if (name !== "campusHonor" && prevTab === "campusHonor") window.CampusHonorTab?.onHide?.();
+    for (const t of cardTabs) {
+      if (name === t.key) t.onShow();
+      else if (prevTab === t.key) t.onHide();
+    }
     resetAutoTabTimer();
   }
 
   tabTv.addEventListener("click", () => setTab("tv"));
-  tabBooks.addEventListener("click", () => setTab("books"));
-  tabCampus.addEventListener("click", () => setTab("campus"));
-  tabHealth.addEventListener("click", () => setTab("health"));
-  tabCounseling.addEventListener("click", () => setTab("counseling"));
-  tabCampusHonor.addEventListener("click", () => setTab("campusHonor"));
 
   /** 直立＝上下各半、橫向＝左右各半（同原 Python 版） */
   function updateLayout(): void {
@@ -347,16 +294,11 @@
     iIdx = 0;
     showVideo();
     showImage();
-    /* 好書介紹分頁：清單更新（不在該分頁時也只是更新內部狀態） */
-    window.BooksTab?.setItems(result.books ?? []);
-    /* 校園風雲分頁：清單更新 */
-    window.CampusTab?.setItems(result.campus ?? []);
-    /* 衛教宣導分頁：清單更新 */
-    window.HealthTab?.setItems(result.health ?? []);
-    /* 輔導室公告分頁：清單更新 */
-    window.CounselingTab?.setItems(result.counseling ?? []);
-    /* 校園榮譽榜分頁：清單更新 */
-    window.CampusHonorTab?.setItems(result.campusHonor ?? []);
+    /* 卡片分頁：清單更新（清單 key 與分頁 key 相同，如 result.campusHonor） */
+    for (const t of cardTabs) {
+      const list = (result as unknown as Record<string, MediaItem[] | undefined>)[t.key];
+      t.setItems(list ?? []);
+    }
     if (paused) {
       video.pause();
       stopTimer();
@@ -378,53 +320,36 @@
         void tvwall.toggleFullscreen();
         break;
       case " ":
-      case "Spacebar":
-        if (currentTab === "books") {
-          if (window.BooksTab?.onKey?.(e)) break; // 好書介紹：Space＝暫停輪播
-        }
-        if (currentTab === "counseling") {
-          if (window.CounselingTab?.onKey?.(e)) break;
-        }
-        if (currentTab === "campusHonor") {
-          if (window.CampusHonorTab?.onKey?.(e)) break;
-        }
+      case "Spacebar": {
+        /* 卡片分頁：Space＝暫停輪播；電視牆：暫停播放 */
+        const inst = cardTabByKey[currentTab];
+        if (inst && inst.onKey(e)) break;
         e.preventDefault();
         togglePause();
         break;
+      }
       case "ArrowRight":
-      case "ArrowDown":
-        if (currentTab === "books") {
-          window.BooksTab?.onKey?.(e);
-          break;
-        }
-        if (currentTab === "counseling") {
-          window.CounselingTab?.onKey?.(e);
-          break;
-        }
-        if (currentTab === "campusHonor") {
-          window.CampusHonorTab?.onKey?.(e);
+      case "ArrowDown": {
+        const inst = cardTabByKey[currentTab];
+        if (inst) {
+          inst.onKey(e);
           break;
         }
         e.preventDefault();
         manualStep(1);
         break;
+      }
       case "ArrowLeft":
-      case "ArrowUp":
-        if (currentTab === "books") {
-          window.BooksTab?.onKey?.(e);
-          break;
-        }
-        if (currentTab === "counseling") {
-          window.CounselingTab?.onKey?.(e);
-          break;
-        }
-        if (currentTab === "campusHonor") {
-          window.CampusHonorTab?.onKey?.(e);
+      case "ArrowUp": {
+        const inst = cardTabByKey[currentTab];
+        if (inst) {
+          inst.onKey(e);
           break;
         }
         e.preventDefault();
         manualStep(-1);
         break;
+      }
       case "r":
       case "R":
         e.preventDefault();
@@ -459,40 +384,13 @@
 
     tabBar.classList.remove("hidden"); // 分頁按鈕始終存在
 
-    /* 好書介紹分頁設定注入（books 資料夾清單由 rescan 給 BooksTab.setItems） */
-    const bookSettings: BookSettings = {
-      intervalMs: cfg.bookIntervalMs,
-    };
-    window.BOOK_SETTINGS = bookSettings;
-    window.BooksTab?.init?.(bookSettings);
-
-    /* 校園風雲分頁設定注入（campus 資料夾清單由 rescan 給 CampusTab.setItems） */
-    const campusSettings: BookSettings = {
-      intervalMs: (cfg as Partial<AppConfig> & { campusIntervalMs?: number }).campusIntervalMs ?? cfg.bookIntervalMs,
-    };
-    window.CAMPUS_SETTINGS = campusSettings;
-    window.CampusTab?.init?.(campusSettings);
-
-    /* 衛教宣導分頁設定注入（health 資料夾清單由 rescan 給 HealthTab.setItems） */
-    const healthSettings: BookSettings = {
-      intervalMs: (cfg as Partial<AppConfig> & { healthIntervalMs?: number }).healthIntervalMs ?? cfg.bookIntervalMs,
-    };
-    window.HEALTH_SETTINGS = healthSettings;
-    window.HealthTab?.init?.(healthSettings);
-
-    /* 輔導室公告分頁設定注入 */
-    const counselingSettings: BookSettings = {
-      intervalMs: (cfg as Partial<AppConfig> & { counselingIntervalMs?: number }).counselingIntervalMs ?? cfg.bookIntervalMs,
-    };
-    window.COUNSELING_SETTINGS = counselingSettings;
-    window.CounselingTab?.init?.(counselingSettings);
-
-    /* 校園榮譽榜分頁設定注入 */
-    const campusHonorSettings: BookSettings = {
-      intervalMs: (cfg as Partial<AppConfig> & { campusHonorIntervalMs?: number }).campusHonorIntervalMs ?? cfg.bookIntervalMs,
-    };
-    window.CAMPUSHONOR_SETTINGS = campusHonorSettings;
-    window.CampusHonorTab?.init?.(campusHonorSettings);
+    /* 卡片分頁設定注入（每頁停留毫秒，欄位名由模版實例的 intervalKey 決定） */
+    for (const t of cardTabs) {
+      const cfgAny = cfg as unknown as Record<string, unknown>;
+      const raw = cfgAny[t.intervalKey || t.key + "IntervalMs"];
+      const ms = typeof raw === "number" && raw > 0 ? raw : cfg.bookIntervalMs;
+      t.init({ intervalMs: ms });
+    }
 
     /* 套用分頁顯示／隱藏設定（config.json 的 tabs 區塊） */
     const bootTabs = (cfg as Partial<AppConfig> & { tabs?: TabVisibility }).tabs;
@@ -505,7 +403,7 @@
 
     /* 預設分頁：只選目前允許顯示的分頁 */
     const vis = visibleTabList();
-    let startTab: "tv" | "books" | "campus" | "health" | "counseling" | "campusHonor" = "tv";
+    let startTab: string = "tv";
     if (vis.length > 0 && !vis.includes("tv")) startTab = vis[0];
     setTab(startTab);
     if (startTab === "tv") {

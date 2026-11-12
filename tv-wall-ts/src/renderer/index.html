@@ -14,25 +14,10 @@
       <span id="serverIp" class="server-ip-value">--</span>
     </div>
 
-    <!-- ===== 分頁列 ===== -->
+    <!-- ===== 分頁列（分頁一：電視牆固定；其餘卡片分頁由 cardTabs.js 模版自動產生） ===== -->
     <nav id="tabBar" class="tabbar">
       <button type="button" id="tabTv" class="tab active">
         <span class="tab-ico">📺</span><span id="tabNameTv">精彩槺榔</span>
-      </button>
-      <button type="button" id="tabBooks" class="tab">
-        <span class="tab-ico">📚</span><span id="tabNameBooks">好書介紹</span>
-      </button>
-      <button type="button" id="tabCampus" class="tab">
-        <span class="tab-ico">📰</span><span id="tabNameCampus">校園風雲</span>
-      </button>
-      <button type="button" id="tabHealth" class="tab">
-        <span class="tab-ico">🏥</span><span id="tabNameHealth">衛教宣導</span>
-      </button>
-      <button type="button" id="tabCounseling" class="tab">
-        <span class="tab-ico">🧠</span><span id="tabNameCounseling">輔導室公告</span>
-      </button>
-      <button type="button" id="tabCampusHonor" class="tab">
-        <span class="tab-ico">🏆</span><span id="tabNameCampusHonor">校園榮譽榜</span>
       </button>
     </nav>
 
@@ -63,158 +48,11 @@
       </div>
     </div>
 
-    <!-- ===== 分頁三：好書介紹（books 資料夾圖片，卡片式輪播） ===== -->
-    <div id="booksPage" class="page books-page hidden">
-      <main class="books-stage">
-        <button type="button" id="bookPrev" class="book-nav" aria-label="上一本">‹</button>
+    <!-- 分頁二以後的卡片分頁（好書介紹／校園風雲／衛教宣導／輔導室公告／校園榮譽榜…）
+         全部由 cardTabTemplate.js + cardTabs.js 模版自動產生，此處不需任何 HTML -->
 
-        <aside class="book-sidebar book-sidebar--start" data-side="start">
-          <div class="book-sidebar-list" id="bookSidebarStart"></div>
-        </aside>
-
-        <section class="book-card">
-          <div class="book-cover-wrap">
-            <img id="bookCover" alt="" />
-          </div>
-          <div class="book-info">
-            <span class="book-tag">📖 好書介紹</span>
-            <h2 class="book-title" id="bookTitle"></h2>
-            <div class="book-meta" id="bookCounter"></div>
-          </div>
-        </section>
-
-        <aside class="book-sidebar book-sidebar--end" data-side="end">
-          <div class="book-sidebar-list" id="bookSidebarEnd"></div>
-        </aside>
-
-        <button type="button" id="bookNext" class="book-nav" aria-label="下一本">›</button>
-      </main>
-
-      <footer class="books-footer">
-        <div id="bookDots" class="book-dots"></div>
-      </footer>
-
-      <!-- 空清單訊息 -->
-      <div id="booksMsg" class="msg books-msg hidden"></div>
-    </div>
-
-    <!-- ===== 校園風雲分頁：campus 資料夾圖片輪播 ===== -->
-    <div id="campusPage" class="page campus-page hidden">
-      <main class="books-stage">
-        <button type="button" id="campusPrev" class="book-nav" aria-label="上一則">‹</button>
-        <aside class="book-sidebar book-sidebar--start" data-side="start">
-          <div class="book-sidebar-list" id="campusSidebarStart"></div>
-        </aside>
-        <section class="book-card">
-          <div class="book-cover-wrap">
-            <img id="campusCover" alt="" />
-          </div>
-          <div class="book-info">
-            <span class="book-tag">📰 校園風雲</span>
-            <h2 class="book-title" id="campusTitle"></h2>
-            <div class="book-meta" id="campusCounter"></div>
-          </div>
-        </section>
-        <aside class="book-sidebar book-sidebar--end" data-side="end">
-          <div class="book-sidebar-list" id="campusSidebarEnd"></div>
-        </aside>
-        <button type="button" id="campusNext" class="book-nav" aria-label="下一則">›</button>
-      </main>
-      <footer class="books-footer">
-        <div id="campusDots" class="book-dots"></div>
-      </footer>
-      <div id="campusMsg" class="msg books-msg hidden"></div>
-    </div>
-
-    <!-- ===== 衛教宣導分頁：health 資料夾圖片輪播 ===== -->
-    <div id="healthPage" class="page health-page hidden">
-      <main class="books-stage">
-        <button type="button" id="healthPrev" class="book-nav" aria-label="上一則">‹</button>
-        <aside class="book-sidebar book-sidebar--start" data-side="start">
-          <div class="book-sidebar-list" id="healthSidebarStart"></div>
-        </aside>
-        <section class="book-card">
-          <div class="book-cover-wrap">
-            <img id="healthCover" alt="" />
-          </div>
-          <div class="book-info">
-            <span class="book-tag">🏥 衛教宣導</span>
-            <h2 class="book-title" id="healthTitle"></h2>
-            <div class="book-meta" id="healthCounter"></div>
-          </div>
-        </section>
-        <aside class="book-sidebar book-sidebar--end" data-side="end">
-          <div class="book-sidebar-list" id="healthSidebarEnd"></div>
-        </aside>
-        <button type="button" id="healthNext" class="book-nav" aria-label="下一則">›</button>
-      </main>
-      <footer class="books-footer">
-        <div id="healthDots" class="book-dots"></div>
-      </footer>
-      <div id="healthMsg" class="msg books-msg hidden"></div>
-    </div>
-
-    <!-- ===== 輔導室公告分頁：counseling 資料夾圖片輪播 ===== -->
-    <div id="counselingPage" class="page counseling-page hidden">
-      <main class="books-stage">
-        <button type="button" id="counselingPrev" class="book-nav" aria-label="上一則">‹</button>
-        <aside class="book-sidebar book-sidebar--start" data-side="start">
-          <div class="book-sidebar-list" id="counselingSidebarStart"></div>
-        </aside>
-        <section class="book-card">
-          <div class="book-cover-wrap">
-            <img id="counselingCover" alt="" />
-          </div>
-          <div class="book-info">
-            <span class="book-tag">🧠 輔導室公告</span>
-            <h2 class="book-title" id="counselingTitle"></h2>
-            <div class="book-meta" id="counselingCounter"></div>
-          </div>
-        </section>
-        <aside class="book-sidebar book-sidebar--end" data-side="end">
-          <div class="book-sidebar-list" id="counselingSidebarEnd"></div>
-        </aside>
-        <button type="button" id="counselingNext" class="book-nav" aria-label="下一則">›</button>
-      </main>
-      <footer class="books-footer">
-        <div id="counselingDots" class="book-dots"></div>
-      </footer>
-      <div id="counselingMsg" class="msg books-msg hidden"></div>
-    </div>
-
-    <!-- ===== 校園榮譽榜分頁：campusHonor 資料夾圖片輪播 ===== -->
-    <div id="campusHonorPage" class="page campusHonor-page hidden">
-      <main class="books-stage">
-        <button type="button" id="campusHonorPrev" class="book-nav" aria-label="上一則">‹</button>
-        <aside class="book-sidebar book-sidebar--start" data-side="start">
-          <div class="book-sidebar-list" id="campusHonorSidebarStart"></div>
-        </aside>
-        <section class="book-card">
-          <div class="book-cover-wrap">
-            <img id="campusHonorCover" alt="" />
-          </div>
-          <div class="book-info">
-            <span class="book-tag">🏆 校園榮譽榜</span>
-            <h2 class="book-title" id="campusHonorTitle"></h2>
-            <div class="book-meta" id="campusHonorCounter"></div>
-          </div>
-        </section>
-        <aside class="book-sidebar book-sidebar--end" data-side="end">
-          <div class="book-sidebar-list" id="campusHonorSidebarEnd"></div>
-        </aside>
-        <button type="button" id="campusHonorNext" class="book-nav" aria-label="下一則">›</button>
-      </main>
-      <footer class="books-footer">
-        <div id="campusHonorDots" class="book-dots"></div>
-      </footer>
-      <div id="campusHonorMsg" class="msg books-msg hidden"></div>
-    </div>
-
-    <script src="campus.js"></script>
-    <script src="health.js"></script>
-    <script src="counseling.js"></script>
-    <script src="campusHonor.js"></script>
+    <script src="cardTabTemplate.js"></script>
+    <script src="cardTabs.js"></script>
     <script src="renderer.js"></script>
-    <script src="books.js"></script>
   </body>
 </html>
