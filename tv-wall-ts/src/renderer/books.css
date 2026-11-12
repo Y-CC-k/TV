@@ -6,7 +6,8 @@
 .books-page,
 .campus-page,
 .health-page,
-.counseling-page {
+.counseling-page,
+.campusHonor-page {
   position: relative;
   display: flex;
   flex-direction: column;
