@@ -383,6 +383,29 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+/* 標題列帶右側按鈕（例如檔案清單＋重新整理） */
+.sub-header.sub-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sub-header .sub-header-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.sub-header .sub-header-right .count {
+  font-weight: 400;
+  font-size: 13px;
+  letter-spacing: 0;
+  color: #94a3b8;
+  margin-left: 0;
+}
+
 /* ── 行 ── */
 .row {
   margin: 10px 0;

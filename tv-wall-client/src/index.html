@@ -71,11 +71,9 @@
             </div>
             <div class="row">
               <button id="bookBtnSelectFile" class="btn-secondary">選擇檔案（可多選）</button>
+              <button id="bookBtnUpload" class="btn-primary" disabled>上傳檔案</button>
               <span id="bookSelectedFile" class="file-info">未選擇檔案</span>
               <input type="file" id="bookFileInput" multiple style="display: none;" />
-            </div>
-            <div class="row">
-              <button id="bookBtnUpload" class="btn-primary" disabled>上傳檔案</button>
             </div>
             <div class="row progress-row">
               <progress id="bookProgress" max="100" value="0"></progress>
@@ -92,10 +90,11 @@
 
           <!-- 子區塊：檔案清單（表列） -->
           <section class="sub-panel" id="subBookList">
-            <div class="sub-header">檔案清單</div>
-            <div class="row">
-              <button id="bookBtnRefresh" class="btn-secondary">重新整理</button>
-              <span id="bookListCount" class="count">0 個檔案</span>
+            <div class="sub-header sub-header-row">檔案清單
+              <span class="sub-header-right">
+                <span id="bookListCount" class="count">0 個檔案</span>
+                <button id="bookBtnRefresh" class="btn-secondary">重新整理</button>
+              </span>
             </div>
             <div id="bookTableWrap" class="book-table-wrap">
               <table class="book-table">
