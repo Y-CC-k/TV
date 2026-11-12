@@ -443,7 +443,7 @@ export function startMediaServer(o: MediaServerOptions): void {
       }
 
       /* ---------- 下載／刪除單一檔案 ---------- */
-      const filesMatch = /^\/files\/(videos|images|books|campus|health|counseling)\/(.+)$/.exec(pathname);
+      const filesMatch = /^\/files\/(videos|images|books|campus|health|counseling|campusHonor)\/(.+)$/.exec(pathname);
       if (filesMatch) {
         if (req.method === "DELETE") {
           const abs = resolveFilePath(filesMatch[1], filesMatch[2], o);
