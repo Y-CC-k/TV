@@ -187,6 +187,29 @@ function resolveFilePath(kind: string, rest: string, o: MediaServerOptions): str
   return abs;
 }
 
+/**
+ * 上傳檔名消毒：只保留純檔名，阻擋 ../ 與 Windows 不合法字元。
+ * （formidable 只會切掉反斜線前的路徑，正斜線仍可能造成路徑穿越）
+ */
+function safeUploadName(raw: string, fallback: string): string {
+  const base = path.basename(String(raw || "").replace(/\\/g, "/"));
+  const cleaned = base
+    .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "_")
+    .replace(/[. ]+$/, "")
+    .slice(0, 120);
+  if (!cleaned || cleaned === "." || cleaned === "..") return fallback;
+  /* Windows 保留檔名（CON、PRN、AUX、NUL、COM1-9、LPT1-9） */
+  if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$/i.test(cleaned)) return fallback;
+  return cleaned;
+}
+
+/** 目標路徑是否確實在 dir 內（含等於 dir 本身） */
+function isInside(dir: string, target: string): boolean {
+  const base = path.resolve(dir);
+  const abs = path.resolve(target);
+  return abs === base || abs.startsWith(base + path.sep);
+}
+
 /** 本機的區網 IPv4（顯示在啟動訊息，供填入用戶端 config.json） */
 function localIPv4s(): string[] {
   const out: string[] = [];
@@ -200,7 +223,7 @@ function localIPv4s(): string[] {
 
 /** 啟動內建伺服器（不回傳太複雜的東西；失敗時只記 log，不影響播放功能） */
 export function startMediaServer(o: MediaServerOptions): void {
-  for (const dir of [o.videoDir, o.imagesDir, ...(o.booksDir ? [o.booksDir] : []), ...(o.campusDir ? [o.campusDir] : []), ...(o.healthDir ? [o.healthDir] : []), ...(o.counselingDir ? [o.counselingDir] : [])]) {
+  for (const dir of [o.videoDir, o.imagesDir, ...(o.booksDir ? [o.booksDir] : []), ...(o.campusDir ? [o.campusDir] : []), ...(o.healthDir ? [o.healthDir] : []), ...(o.counselingDir ? [o.counselingDir] : []), ...(o.campusHonorDir ? [o.campusHonorDir] : [])]) {
     try {
       fs.mkdirSync(dir, { recursive: true });
     } catch (err) {
@@ -213,6 +236,18 @@ export function startMediaServer(o: MediaServerOptions): void {
     const pathname = url.pathname;
 
     try {
+      /* 跨來源預檢（DELETE／POST 從瀏覽器環境送出時必要） */
+      if (req.method === "OPTIONS") {
+        res.writeHead(204, {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, HEAD, POST, DELETE, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type",
+          "Access-Control-Max-Age": "600",
+        });
+        res.end();
+        return;
+      }
+
       if (req.method !== "GET" && req.method !== "HEAD" && req.method !== "POST" && req.method !== "DELETE") {
         sendText(res, 405, "Method Not Allowed");
         return;
@@ -247,8 +282,10 @@ export function startMediaServer(o: MediaServerOptions): void {
 
           for (let i = 0; i < fileEntries.length; i++) {
             const fileEntry = fileEntries[i];
-            const origName = fileEntry.originalFilename || `upload_${i}`;
-            const ext = path.extname(origName).toLowerCase();
+            const rawName = fileEntry.originalFilename || `upload_${i}`;
+            const ext = path.extname(rawName).toLowerCase();
+            /* 消毒檔名（阻擋 ../、絕對路徑與 Windows 保留字） */
+            const origName = safeUploadName(rawName, `upload_${i}${ext}`);
 
             // 每個檔案可對應各自的 type，沒給則用預設
             const rawType = types[i] || defaultType;
@@ -286,6 +323,14 @@ export function startMediaServer(o: MediaServerOptions): void {
               counter++;
             }
             const savePath = path.join(targetDir, saveName);
+
+            /* 最終防線：儲存路徑必須在目標資料夾內 */
+            if (!isInside(targetDir, savePath) || path.dirname(path.resolve(savePath)) !== path.resolve(targetDir)) {
+              hasError = true;
+              firstErrorMsg = `不合法的檔名（檔案：${origName}）`;
+              results.push({ ok: false, name: origName, error: firstErrorMsg });
+              continue;
+            }
 
             try {
               // 跨磁碟機無法用 rename，改用串流複製後刪除暫存檔
@@ -449,6 +494,11 @@ export function startMediaServer(o: MediaServerOptions): void {
           const abs = resolveFilePath(filesMatch[1], filesMatch[2], o);
           if (!abs) {
             sendText(res, 400, "Bad Request");
+            return;
+          }
+          const delStat = await fsp.stat(abs).catch(() => null);
+          if (!delStat || !delStat.isFile()) {
+            sendText(res, 404, "Not Found");
             return;
           }
           try {

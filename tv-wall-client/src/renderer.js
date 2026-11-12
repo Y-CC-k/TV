@@ -4,10 +4,19 @@
   const $ = (id) => document.getElementById(id);
 
   /* ---------- 狀態 ---------- */
-  let servers = JSON.parse(localStorage.getItem("tvwall_servers") || "[]");
+  /** 安全讀取 localStorage 的 JSON（資料損毀時回退預設值，不讓整個程式白屏） */
+  function readStoredArray(key) {
+    try {
+      const v = JSON.parse(localStorage.getItem(key) || "null");
+      return Array.isArray(v) ? v : [];
+    } catch {
+      return [];
+    }
+  }
+  let servers = readStoredArray("tvwall_servers").filter((s) => s && s.ip);
   /* 已刪除公告機的墓碑（ip:port）：啟動合併 config.json 時跳過，避免被刪除的公告機復活
-     （config.json 寫入失敗或人工維護時，刪除仍能持久保留） */
-  let removedServers = JSON.parse(localStorage.getItem("tvwall_removed_servers") || "[]");
+     （設定檔寫入失敗或人工維護時，刪除仍能持久保留） */
+  let removedServers = readStoredArray("tvwall_removed_servers").filter((k) => typeof k === "string");
   function serverAddrKey(ip, port) {
     const p = String(port == null ? 8123 : port).trim() || "8123";
     return `${String(ip || "").trim()}:${p}`;
@@ -59,6 +68,7 @@
   const tabChkBooks = $("tabChkBooks");
   const tabChkCampus = $("tabChkCampus");
   const tabChkHealth = $("tabChkHealth");
+  const tabChkCounseling = $("tabChkCounseling");
   const tabChkCampusHonor = $("tabChkCampusHonor");
   const btnLoadTabs = $("btnLoadTabs");
   const tabNameTv = $("tabNameTv");
@@ -119,6 +129,7 @@
     });
   }
 
+  /** 只負責儲存（localStorage＋設定檔）；畫面更新請呼叫 refreshServersUi() */
   function saveServers() {
     localStorage.setItem("tvwall_servers", JSON.stringify(servers));
     try {
@@ -129,11 +140,15 @@
       }));
       const r = tvwallClient.saveBootConfig({ servers: flat });
       r.then((res) => {
-        if (res && !res.ok) console.warn("[config.json] 寫入失敗：", res.error);
+        if (res && !res.ok) console.warn("[設定檔] 寫入失敗：", res.error);
       });
     } catch (err) {
-      console.warn("[config.json] 寫入失敗：", err);
+      console.warn("[設定檔] 寫入失敗：", err);
     }
+  }
+
+  /** 公告機清單／下拉選單重繪（儲存後由呼叫端明確呼叫，避免互相觸發造成無限迴圈） */
+  function refreshServersUi() {
     renderServerList();
     populateServerSelects();
   }
@@ -154,11 +169,8 @@
     const pwd = await getStoredPassword();
     while (true) {
       const entered = await promptMsg("請輸入開啟密碼", "");
-      if (entered === null) {
-        try { window.tvwallClient.close && await window.tvwallClient.close(); } catch (e) {}
-        return false;
-      }
-      if (entered === pwd) return true;
+      if (entered === null) return false; // 使用者取消 → 不進入程式
+      if (String(entered) === String(pwd)) return true;
       await alertMsg("密碼錯誤，請重新輸入");
     }
   }
@@ -382,6 +394,7 @@
         removedServers = removedServers.filter((k) => k !== key);
         saveRemovedServers();
         saveServers();
+        refreshServersUi();
       });
     });
 
@@ -404,6 +417,7 @@
           setBookServerStatus("", null);
         }
         saveServers();
+        refreshServersUi();
       });
     });
   }
@@ -416,21 +430,32 @@
       await alertMsg("請輸入名稱與 IP");
       return;
     }
+    const portNum = Number(port || 8123);
+    if (!Number.isInteger(portNum) || portNum < 1 || portNum > 65535) {
+      await alertMsg("Port 必須是 1–65535 的整數");
+      return;
+    }
+    /* 同 ip:port 不可重複新增 */
+    if (servers.some((x) => serverAddrKey(x.ip, x.port) === serverAddrKey(ip, portNum))) {
+      await alertMsg("此公告機已存在");
+      return;
+    }
     /* 使用者手動新增：解除同地址的墓碑（之後可以正常管理） */
-    const key = serverAddrKey(ip, port);
+    const key = serverAddrKey(ip, portNum);
     removedServers = removedServers.filter((k) => k !== key);
     saveRemovedServers();
     servers.push({
       id: generateId(),
       name,
       ip,
-      port,
+      port: String(portNum),
       online: false,
     });
     serverName.value = "";
     serverIp.value = "";
     serverPort.value = "8123";
     saveServers();
+    refreshServersUi();
   });
   btnSavePassword.addEventListener("click", async () => {
     const np = newPasswordInput.value.trim();
@@ -571,8 +596,11 @@
 
 
 
-  /* 填入下拉選單（好書介紹 / 分頁顯示設定） */
+  /* 填入下拉選單（資料傳輸 / 分頁顯示設定）；保留使用者目前選擇，且不做任何網路請求
+     （避免「儲存→重繪→檢查連線→儲存」的無限迴圈） */
   function populateServerSelects() {
+    const prevBook = bookServerSelect.value;
+    const prevTab = tabServerSelect.value;
     [bookServerSelect, tabServerSelect].forEach((sel) => {
       sel.innerHTML = '<option value="">-- 請選擇公告機 --</option>';
       servers.forEach((s) => {
@@ -583,20 +611,26 @@
       });
     });
 
-    if (selectedServerId) {
-      bookServerSelect.value = selectedServerId;
-      tabServerSelect.value = selectedServerId;
-      loadServerInfo(selectedServerId);
-      void refreshBookServerStatus(selectedServerId);
-      void loadTabVisibility();
-    }
+    const pick = (candidate) => {
+      if (servers.some((s) => s.id === candidate)) return candidate;
+      if (servers.some((s) => s.id === selectedServerId)) return selectedServerId;
+      return "";
+    };
+    bookServerSelect.value = pick(prevBook);
+    tabServerSelect.value = pick(prevTab);
   }
 
   function loadServerInfo(serverId) {
     const s = servers.find((x) => x.id === serverId);
     if (!s) return;
     currentBaseUrl = `http://${s.ip}:${s.port}`;
-    bookBtnUpload.disabled = !bookSelectedFiles.length;
+    bookBtnUpload.disabled = !canUpload();
+  }
+
+  /** 是否可上傳：已選公告機（或勾選全部）且已選擇檔案 */
+  function canUpload() {
+    const hasTarget = !!(selectedServerId || (uploadAllServers.checked && servers.length > 0));
+    return hasTarget && bookSelectedFiles.length > 0;
   }
 
   /* ---------- 資料傳輸：選擇公告機時顯示連線狀態 ---------- */
@@ -607,13 +641,17 @@
   }
 
   /** 檢查公告機是否連線並更新狀態標籤（檢查中→🟢 已連線／🔴 無法連線） */
+  let statusCheckToken = 0;
   async function refreshBookServerStatus(serverId) {
     if (!serverId) {
+      statusCheckToken++;
       setBookServerStatus("", null);
       return;
     }
+    const token = ++statusCheckToken;
     setBookServerStatus("連線中…", null);
     const ok = await testConnection(serverId);
+    if (token !== statusCheckToken) return; // 已有較新的檢查，避免舊結果蓋掉新狀態
     setBookServerStatus(ok ? "🟢 已連線" : "🔴 無法連線", ok ? "online" : "offline");
   }
 
@@ -649,7 +687,7 @@
     bookSelectedFiles = [];
     bookFileInput.value = "";
     bookSelectedFile.textContent = "未選擇檔案";
-    bookBtnUpload.disabled = !selectedServerId;
+    bookBtnUpload.disabled = !canUpload();
     bookMsg.textContent = "";
   }
 
@@ -661,7 +699,7 @@
     const totalMB = (files.reduce((sum, f) => sum + f.size, 0) / 1024 / 1024).toFixed(2);
     const unit = document.querySelector('input[name="bookFileType"]:checked').value === "video" ? "個影片" : "個檔案";
     bookSelectedFile.textContent = `已選擇 ${files.length} ${unit}（共 ${totalMB} MB）`;
-    bookBtnUpload.disabled = !selectedServerId;
+    bookBtnUpload.disabled = !canUpload();
     bookMsg.textContent = "";
     bookProgress.value = 0;
     bookProgressText.textContent = "0%";
@@ -780,7 +818,7 @@
     bookFileInput.value = "";
     bookSelectedFile.textContent = "未選擇檔案";
     bookTitleInput.value = "";
-    bookBtnUpload.disabled = !selectedServerId;
+    bookBtnUpload.disabled = !canUpload();
 
     loadBookList();
   });
@@ -817,27 +855,32 @@
 
       files.forEach((f) => {
         const tr = document.createElement("tr");
+        /* 伺服器回傳的 path 才是完整相對路徑（子資料夾也能正確縮圖／刪除） */
+        const rel = f.path || f.name;
+        const relUrl = String(rel).split("/").map(encodeURIComponent).join("/");
         /* 影片無縮圖 → 🎬 佔位；影片大小以 MB 顯示 */
         const thumbHtml = bookType === "video"
           ? `<span style="font-size:36px;line-height:64px;">🎬</span>`
-          : `<img class="book-thumb" src="${currentBaseUrl}/files/${typeKey}/${encodeURIComponent(f.name)}" alt="" />`;
+          : `<img class="book-thumb" src="${currentBaseUrl}/files/${typeKey}/${relUrl}" alt="" />`;
         const delim = bookType === "video" ? `${(f.size / 1024 / 1024).toFixed(2)} MB` : `${(f.size / 1024).toFixed(0)} KB`;
         tr.innerHTML =
           `<td class="col-thumb">${thumbHtml}</td>` +
           `<td class="col-title">${esc(bookType === "video" ? "影片" : bookType === "image" ? "照片" : bookTitleFromName(f.name))}</td>` +
           `<td class="col-file">${esc(f.name)}</td>` +
           `<td class="col-size">${delim}</td>` +
-          `<td class="col-action book-actions"><button data-name="${esc(f.name)}">刪除</button></td>`;
+          `<td class="col-action book-actions"><button data-path="${esc(rel)}" data-name="${esc(f.name)}">刪除</button></td>`;
         bookTableBody.appendChild(tr);
       });
 
       bookTableBody.querySelectorAll("button").forEach((btn) => {
         btn.addEventListener("click", async () => {
-          const name = btn.getAttribute("data-name");
-          if (!(await confirmMsg(`確定要刪除「${name}」嗎？`))) return;
+          const rel = btn.getAttribute("data-path");
+          const display = btn.getAttribute("data-name") || rel;
+          if (!(await confirmMsg(`確定要刪除「${display}」嗎？`))) return;
+          const relUrl = String(rel).split("/").map(encodeURIComponent).join("/");
           try {
             const delRes = await fetch(
-              `${currentBaseUrl}/files/${typeKey}/${encodeURIComponent(name)}`,
+              `${currentBaseUrl}/files/${typeKey}/${relUrl}`,
               { method: "DELETE", signal: AbortSignal.timeout(10000) },
             );
             if (!delRes.ok) throw new Error("刪除失敗 HTTP " + delRes.status);
@@ -854,8 +897,11 @@
   }
 
   bookBtnRefresh.addEventListener("click", loadBookList);
+  uploadAllServers.addEventListener("change", () => {
+    bookBtnUpload.disabled = !canUpload();
+  });
 
-  /* ---------- 測試連線 ---------- */
+  /* ---------- 測試連線（只更新記憶體狀態，不寫入設定檔，避免迴圈與磁碟狂寫） ---------- */
   async function testConnection(serverId) {
     const s = servers.find((x) => x.id === serverId);
     if (!s) return false;
@@ -863,11 +909,9 @@
     try {
       const res = await fetch(`${url}/`, { signal: AbortSignal.timeout(5000) });
       s.online = res.ok;
-      saveServers();
       return res.ok;
     } catch {
       s.online = false;
-      saveServers();
       return false;
     }
   }
@@ -902,8 +946,11 @@
     }
 
     /* 原（無設定檔）初始化流程 */
-     /* ---------- 密碼驗證 ---------- */
-     await ensurePassword();
+    /* ---------- 密碼驗證（取消＝不進入程式） ---------- */
+    if (!(await ensurePassword())) {
+      window.tvwallClient.windowClose && window.tvwallClient.windowClose();
+      return;
+    }
 
     renderServerList();
     populateServerSelects();
@@ -914,10 +961,13 @@
     if (servers.length > 0 && !selectedServerId) {
       selectedServerId = servers[0].id;
       bookServerSelect.value = selectedServerId;
+      tabServerSelect.value = selectedServerId;
       loadServerInfo(selectedServerId);
+      void refreshBookServerStatus(selectedServerId);
+      void loadTabVisibility();
     }
 
-    bookBtnUpload.disabled = true;
+    bookBtnUpload.disabled = !canUpload();
 
     /* 啟動時自動載入資料傳輸檔案清單（已依公告機選擇連動） */
     if (selectedServerId) loadBookList();

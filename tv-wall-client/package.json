@@ -21,10 +21,6 @@
     "afterPack": "scripts/afterpack.js",
     "extraFiles": [
       {
-        "from": "config.json",
-        "to": "config.json"
-      },
-      {
         "from": "icon.ico",
         "to": "icon.ico"
       }

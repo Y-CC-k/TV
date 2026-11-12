@@ -35,21 +35,29 @@ function createWindow() {
 }
 
 /**
- * 讀取 exe 旁邊的 config.json（打包版＝win-unpacked 目錄；開發版＝專案根目錄）。
- * 沒有檔案或格式錯誤時回 null，程式照樣能用（照舊用 localStorage 的設定）。
+ * 使用者設定的寫入位置：userData（不受安裝目錄權限影響，重裝／升級也不會被覆蓋）。
+ * 例：C:\Users\<user>\AppData\Roaming\TvWallClient\config.json
+ */
+function writeConfigPath() {
+  return path.join(app.getPath("userData"), "config.json");
+}
+
+/**
+ * 讀取設定：優先 userData，其次 exe 旁（舊版安裝留下的設定，用於一次性遷移），
+ * 最後才是開發目錄。每次都重新讀取，避免快取造成第二次呼叫回傳 null
+ * （舊版的 _last 會讓密碼讀取永遠失敗、退回預設密碼）。
  */
 function bootConfig() {
-  const candidates = [
+  const candidates = [...new Set([
+    writeConfigPath(),
     path.join(path.dirname(process.execPath), "config.json"),
     path.join(__dirname, "config.json"),
-  ];
+  ])];
   for (const p of candidates) {
     try {
       if (!fs.existsSync(p)) continue;
-      // 兩個候選指向同一個檔案時只讀一次
-      if (p === bootConfig._last) break;
-      bootConfig._last = p;
-      return { path: p, raw: JSON.parse(fs.readFileSync(p, "utf8")) };
+      const text = fs.readFileSync(p, "utf8").replace(/^\uFEFF/, "");
+      return { path: p, raw: JSON.parse(text) };
     } catch (err) {
       console.warn(`config.json 讀取失敗（${p}）：${err.message}`);
     }
@@ -58,13 +66,6 @@ function bootConfig() {
 }
 
 app.whenReady().then(createWindow);
-
-/** 寫入目標：打包版＝exe 旁邊；開發版＝專案根目錄（main.js 旁邊） */
-function writeConfigPath() {
-  return app.isPackaged
-    ? path.join(path.dirname(process.execPath), "config.json")
-    : path.join(__dirname, "config.json");
-}
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
@@ -89,16 +90,26 @@ ipcMain.on("window-maximize", () => {
 ipcMain.on("window-close", () => { if (mainWindow) mainWindow.close(); });
 ipcMain.handle("get-boot-config", () => bootConfig());
 
-/** 把 patch（{ servers: [...] } 或 { honor: {...} }）合併寫回 config.json；只動有給的欄位，其他保留 */
+/** 把 patch（{ servers: [...] }、{ password: "…" }）合併寫回使用者設定；只動有給的欄位 */
 ipcMain.handle("save-boot-config", (_event, patch) => {
   try {
     const p = writeConfigPath();
+    fs.mkdirSync(path.dirname(p), { recursive: true });
     let raw = {};
     try {
-      if (fs.existsSync(p)) raw = JSON.parse(fs.readFileSync(p, "utf8"));
+      if (fs.existsSync(p)) {
+        raw = JSON.parse(fs.readFileSync(p, "utf8").replace(/^\uFEFF/, ""));
+      } else {
+        /* 第一次寫入：把舊版 exe 旁的設定（servers／password）遷移過來 */
+        const legacy = bootConfig();
+        if (legacy) raw = legacy.raw;
+      }
     } catch { /* 舊檔解析失敗時整份重寫 */ }
     Object.assign(raw, patch || {});
-    fs.writeFileSync(p, JSON.stringify(raw, null, 2) + "\n", "utf8");
+    /* 原子寫入：先寫暫存檔再改名，避免另一支程式讀到半份 JSON */
+    const tmp = p + ".tmp";
+    fs.writeFileSync(tmp, JSON.stringify(raw, null, 2) + "\n", "utf8");
+    fs.renameSync(tmp, p);
     return { ok: true, path: p };
   } catch (err) {
     return { ok: false, error: err.message };
