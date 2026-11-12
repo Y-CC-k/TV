@@ -395,6 +395,12 @@
         saveRemovedServers();
         saveServers();
         refreshServersUi();
+        /* 正在使用的公告機被改地址 → 立即套用新的 baseUrl */
+        if (selectedServerId === s.id) {
+          loadServerInfo(s.id);
+          void refreshBookServerStatus(s.id);
+          loadBookList();
+        }
       });
     });
 
