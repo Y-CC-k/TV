@@ -26,6 +26,7 @@
 
   /* ---------- 元素：資料傳輸 ---------- */
   const bookServerSelect = $("bookServerSelect");
+  const bookServerStatus = $("bookServerStatus");
   const bookTitleInput = $("bookTitleInput");
   const bookTitleRow = $("bookTitleRow");
   const uploadAllServers = $("uploadAllServers");
@@ -559,6 +560,7 @@
       bookServerSelect.value = selectedServerId;
       tabServerSelect.value = selectedServerId;
       loadServerInfo(selectedServerId);
+      void refreshBookServerStatus(selectedServerId);
       void loadTabVisibility();
     }
   }
@@ -570,14 +572,34 @@
     bookBtnUpload.disabled = !bookSelectedFiles.length;
   }
 
+  /* ---------- 資料傳輸：選擇公告機時顯示連線狀態 ---------- */
+  function setBookServerStatus(text, cls) {
+    bookServerStatus.classList.remove("online", "offline");
+    if (cls) bookServerStatus.classList.add(cls);
+    bookServerStatus.textContent = text;
+  }
+
+  /** 檢查公告機是否連線並更新狀態標籤（檢查中→🟢 已連線／🔴 無法連線） */
+  async function refreshBookServerStatus(serverId) {
+    if (!serverId) {
+      setBookServerStatus("", null);
+      return;
+    }
+    setBookServerStatus("連線中…", null);
+    const ok = await testConnection(serverId);
+    setBookServerStatus(ok ? "🟢 已連線" : "🔴 無法連線", ok ? "online" : "offline");
+  }
+
   /* ---------- 資料傳輸：元素事件 ---------- */
   bookServerSelect.addEventListener("change", (e) => {
     selectedServerId = e.target.value || null;
     if (selectedServerId) {
       loadServerInfo(selectedServerId);
+      void refreshBookServerStatus(selectedServerId);
       loadBookList();
     } else {
       currentBaseUrl = "";
+      setBookServerStatus("", null);
       bookBtnUpload.disabled = true;
       bookTableBody.innerHTML = "";
       bookListCount.textContent = "0 個檔案";
