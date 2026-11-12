@@ -126,18 +126,35 @@ async function fileHash(abs: string): Promise<{ size: number; hash: string }> {
   return { size: st.size, hash: value.hash };
 }
 
-async function buildList(dir: string, exts: Set<string>): Promise<Array<{ path: string; size: number; hash: string }>> {
+/**
+ * 快速清單：只做 stat（不讀檔、不算 hash），供 /files 與首頁統計使用。
+ * 大檔案庫（數 GB 影片）也不會因此卡住。
+ */
+async function listFiles(dir: string, exts: Set<string>): Promise<Array<{ path: string; size: number }>> {
   const files = walk(dir).filter((f) => exts.has(path.extname(f).toLowerCase()));
+  const list = await Promise.all(files.map(async (f) => {
+    try {
+      const st = await fsp.stat(f);
+      if (!st.isFile()) return null;
+      return { path: path.relative(dir, f).replace(/\\/g, "/"), size: st.size };
+    } catch {
+      return null; // 掃描與刪除同時發生時略過
+    }
+  }));
+  const out = list.filter((x): x is { path: string; size: number } => x !== null);
+  out.sort((a, b) => (a.path < b.path ? -1 : 1));
+  return out;
+}
+
+/** 含 SHA-256 的完整清單（目前只有 /manifest 使用；一般瀏覽檔案請用 listFiles） */
+async function buildList(dir: string, exts: Set<string>): Promise<Array<{ path: string; size: number; hash: string }>> {
+  const base = await listFiles(dir, exts);
   const list: Array<{ path: string; size: number; hash: string }> = [];
-  for (const f of files) {
-    const info = await fileHash(f);
-    list.push({
-      path: path.relative(dir, f).replace(/\\/g, "/"),
-      size: info.size,
-      hash: info.hash,
-    });
+  for (const entry of base) {
+    const abs = path.join(dir, ...entry.path.split("/"));
+    const info = await fileHash(abs);
+    list.push({ path: entry.path, size: info.size, hash: info.hash });
   }
-  list.sort((a, b) => (a.path < b.path ? -1 : 1));
   return list;
 }
 
@@ -345,9 +362,6 @@ export function startMediaServer(o: MediaServerOptions): void {
               await fsp.unlink(fileEntry.filepath).catch(() => undefined);
 
               const stat = await fsp.stat(savePath);
-              const info = await fileHash(savePath);
-              // 清掉 hash 快取，強制下次 manifest 重新計算（新檔案）
-              HASH_CACHE.delete(savePath);
 
               console.log(`[server] 上傳完成：${savePath}（${stat.size} bytes）`);
               results.push({
@@ -355,7 +369,6 @@ export function startMediaServer(o: MediaServerOptions): void {
                 name: saveName,
                 path: (fileType === "video" ? "videos/" : fileType === "book" ? "books/" : fileType === "campus" ? "campus/" : fileType === "health" ? "health/" : fileType === "counseling" ? "counseling/" : fileType === "campusHonor" ? "campusHonor/" : "images/") + saveName,
                 size: stat.size,
-                hash: info.hash,
                 type: fileType,
               });
             } catch (saveErr) {
@@ -441,25 +454,29 @@ export function startMediaServer(o: MediaServerOptions): void {
       }
 
       if (pathname === "/" || pathname === "") {
-        const v = await buildList(o.videoDir, VIDEO_EXTS);
-        const i = await buildList(o.imagesDir, IMAGE_EXTS);
-        const b = o.booksDir ? await buildList(o.booksDir, IMAGE_EXTS) : [];
-        const c = o.campusDir ? await buildList(o.campusDir, IMAGE_EXTS) : [];
-        const h = o.healthDir ? await buildList(o.healthDir, IMAGE_EXTS) : [];
-        sendText(res, 200, `電視牆伺服器：${v.length} 個影片、${i.length} 張圖片、${b.length} 本好書介紹、${c.length} 則校園風雲、${h.length} 則衛教宣導\n影片資料夾：${o.videoDir}\n圖片資料夾：${o.imagesDir}\n好書介紹資料夾：${o.booksDir ?? "（未設定）"}\n校園風雲資料夾：${o.campusDir ?? "（未設定）"}\n衛教宣導資料夾：${o.healthDir ?? "（未設定）"}\n\nGET /files        列出所有可播放檔案（上傳工具介面用）\nGET /files/...    下載檔案\nPOST /upload      上傳檔案（multipart/form-data，欄位 file + type=video|image|book|campus|health）\nDELETE /files/:type/:name  刪除檔案\nGET /config       讀取分頁顯示設定\nPOST /config      更新分頁顯示設定（JSON：{ "tabs": { "tv": true, "honor": true, "books": true, "campus": true, "health": true }, "tabNames": { "tv": "精彩槺榔", "books": "好書介紹", "campus": "校園風雲", "health": "衛教宣導" } }）\n`);
+        const [v, i, b, c, h, co, ch] = await Promise.all([
+          listFiles(o.videoDir, VIDEO_EXTS),
+          listFiles(o.imagesDir, IMAGE_EXTS),
+          o.booksDir ? listFiles(o.booksDir, IMAGE_EXTS) : Promise.resolve([]),
+          o.campusDir ? listFiles(o.campusDir, IMAGE_EXTS) : Promise.resolve([]),
+          o.healthDir ? listFiles(o.healthDir, IMAGE_EXTS) : Promise.resolve([]),
+          o.counselingDir ? listFiles(o.counselingDir, IMAGE_EXTS) : Promise.resolve([]),
+          o.campusHonorDir ? listFiles(o.campusHonorDir, IMAGE_EXTS) : Promise.resolve([]),
+        ]);
+        sendText(res, 200, `電視牆伺服器：${v.length} 個影片、${i.length} 張圖片、${b.length} 本好書介紹、${c.length} 則校園風雲、${h.length} 則衛教宣導、${co.length} 則輔導室公告、${ch.length} 則校園榮譽榜\n影片資料夾：${o.videoDir}\n圖片資料夾：${o.imagesDir}\n好書介紹資料夾：${o.booksDir ?? "（未設定）"}\n校園風雲資料夾：${o.campusDir ?? "（未設定）"}\n衛教宣導資料夾：${o.healthDir ?? "（未設定）"}\n輔導室公告資料夾：${o.counselingDir ?? "（未設定）"}\n校園榮譽榜資料夾：${o.campusHonorDir ?? "（未設定）"}\n\nGET /files        列出所有可播放檔案（上傳工具介面用，只讀 stat，速度最快）\nGET /manifest     含 SHA-256 的完整清單\nGET /files/...    下載檔案\nPOST /upload      上傳檔案（multipart/form-data，欄位 file + type=video|image|book|campus|health|counseling|campusHonor）\nDELETE /files/:type/:name  刪除檔案\nGET /config       讀取分頁顯示設定\nPOST /config      更新分頁顯示設定（JSON：{ "tabs": { "tv": true, "books": true, "campus": true, "health": true, "counseling": true, "campusHonor": true }, "tabNames": { "tv": "精彩槺榔", "books": "好書介紹", "campus": "校園風雲", "health": "衛教宣導" } }）\n`);
         return;
       }
 
-      /* ---------- 檔案清單（供用戶端 GUI 顯示） ---------- */
+      /* ---------- 檔案清單（供用戶端 GUI 顯示；只讀 stat，不含 hash） ---------- */
       if (pathname === "/files" && req.method === "GET") {
         const [videos, images, books, campus, health, counseling, campusHonor] = await Promise.all([
-          buildList(o.videoDir, VIDEO_EXTS),
-          buildList(o.imagesDir, IMAGE_EXTS),
-          o.booksDir ? buildList(o.booksDir, IMAGE_EXTS) : Promise.resolve([]),
-          o.campusDir ? buildList(o.campusDir, IMAGE_EXTS) : Promise.resolve([]),
-          o.healthDir ? buildList(o.healthDir, IMAGE_EXTS) : Promise.resolve([]),
-          o.counselingDir ? buildList(o.counselingDir, IMAGE_EXTS) : Promise.resolve([]),
-          o.campusHonorDir ? buildList(o.campusHonorDir, IMAGE_EXTS) : Promise.resolve([]),
+          listFiles(o.videoDir, VIDEO_EXTS),
+          listFiles(o.imagesDir, IMAGE_EXTS),
+          o.booksDir ? listFiles(o.booksDir, IMAGE_EXTS) : Promise.resolve([]),
+          o.campusDir ? listFiles(o.campusDir, IMAGE_EXTS) : Promise.resolve([]),
+          o.healthDir ? listFiles(o.healthDir, IMAGE_EXTS) : Promise.resolve([]),
+          o.counselingDir ? listFiles(o.counselingDir, IMAGE_EXTS) : Promise.resolve([]),
+          o.campusHonorDir ? listFiles(o.campusHonorDir, IMAGE_EXTS) : Promise.resolve([]),
         ]);
         sendJson(res, {
           videos: videos.map(f => ({ name: path.basename(f.path), size: f.size, type: "video", path: f.path })),
