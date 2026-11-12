@@ -5,6 +5,16 @@
 
   /* ---------- 狀態 ---------- */
   let servers = JSON.parse(localStorage.getItem("tvwall_servers") || "[]");
+  /* 已刪除公告機的墓碑（ip:port）：啟動合併 config.json 時跳過，避免被刪除的公告機復活
+     （config.json 寫入失敗或人工維護時，刪除仍能持久保留） */
+  let removedServers = JSON.parse(localStorage.getItem("tvwall_removed_servers") || "[]");
+  function serverAddrKey(ip, port) {
+    const p = String(port == null ? 8123 : port).trim() || "8123";
+    return `${String(ip || "").trim()}:${p}`;
+  }
+  function saveRemovedServers() {
+    localStorage.setItem("tvwall_removed_servers", JSON.stringify(removedServers));
+  }
   let selectedServerId = null; // 目前選定的公告機 ID（用於上傳/檔案清單）
   let currentBaseUrl = "";     // 目前選定公告機的 baseUrl
   let bookSelectedFiles = []; // File[] 多個選中的檔案
@@ -367,6 +377,10 @@
         s.ip = (res.ip || "").trim() || s.ip;
         s.port = (res.port || "").trim() || s.port;
         s.online = false;
+        /* 編輯後的新地址解除墓碑（之後可以正常管理） */
+        const key = serverAddrKey(s.ip, s.port);
+        removedServers = removedServers.filter((k) => k !== key);
+        saveRemovedServers();
         saveServers();
       });
     });
@@ -374,11 +388,20 @@
     serverList.querySelectorAll(".btn-delete").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const id = btn.getAttribute("data-id");
+        const s = servers.find((x) => x.id === id);
+        if (!s) return;
         if (!(await confirmMsg("確定要刪除此公告機嗎？"))) return;
+        /* 記入墓碑：下次啟動合併 config.json 時不再把它加回來 */
+        const key = serverAddrKey(s.ip, s.port);
+        if (!removedServers.includes(key)) {
+          removedServers.push(key);
+          saveRemovedServers();
+        }
         servers = servers.filter((x) => x.id !== id);
         if (selectedServerId === id) {
           selectedServerId = null;
           currentBaseUrl = "";
+          setBookServerStatus("", null);
         }
         saveServers();
       });
@@ -393,6 +416,10 @@
       await alertMsg("請輸入名稱與 IP");
       return;
     }
+    /* 使用者手動新增：解除同地址的墓碑（之後可以正常管理） */
+    const key = serverAddrKey(ip, port);
+    removedServers = removedServers.filter((k) => k !== key);
+    saveRemovedServers();
     servers.push({
       id: generateId(),
       name,
@@ -857,12 +884,13 @@
         console.info("[config.json] 使用設定檔：", boot.path);
         const raw = boot.raw;
 
-        /* 公告機：依 ip+port 去重後併入 */
+        /* 公告機：依 ip+port 去重後併入；已刪除（墓碑）的不復活 */
         let added = 0;
         for (const s of Array.isArray(raw.servers) ? raw.servers : []) {
           if (!s || !s.ip) continue;
           const ip = String(s.ip).trim();
           const port = String(s.port == null ? 8123 : s.port).trim() || "8123";
+          if (removedServers.includes(serverAddrKey(ip, port))) continue;
           if (servers.some((x) => x.ip === ip && String(x.port || 8123) === port)) continue;
           servers.push({ id: generateId(), name: s.name ? String(s.name).trim() : ip, ip, port, online: false });
           added++;
