@@ -85,7 +85,7 @@
       els.title.textContent = "";
       els.counter.textContent = "";
       renderDots();
-      setMsg("campusHonor 資料夾沒有校園榮譽榜圖片，請用「電視牆用戶端上傳工具」上傳");
+      setMsg("資料夾沒有 公告圖片，請用「電視牆用戶端上傳工具」上傳");
       return;
     }
     if (els.page) els.page.classList.remove("books-empty");
