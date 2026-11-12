@@ -63,7 +63,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(170deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.04) 100%);
+  background: #0b0f18;
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 22px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
@@ -77,6 +77,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  background: #000;
 }
 
 .book-cover-wrap img {
@@ -86,6 +87,7 @@
   max-height: 100%;
   object-fit: contain;
   border-radius: 10px;
+  background: #000;
 }
 
 .book-cover-wrap img.hidden {
