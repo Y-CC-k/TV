@@ -64,7 +64,7 @@ interface FileConfig {
   imagesDir?: string;
   /** 好書介紹（books 分頁）圖片資料夾 */
   booksDir?: string;
-  /** 校園風雲（campus 分頁）圖片資料夾 */
+  /** 學務活動（campus 分頁）圖片資料夾 */
   campusDir?: string;
   /** 衛教宣導（health 分頁）圖片資料夾 */
   healthDir?: string;
@@ -74,7 +74,7 @@ interface FileConfig {
   campusHonorDir?: string;
   /** 好書介紹每頁停留毫秒 */
   bookIntervalMs?: number;
-  /** 校園風雲每頁停留毫秒 */
+  /** 學務活動每頁停留毫秒 */
   campusIntervalMs?: number;
   /** 衛教宣導每頁停留毫秒 */
   healthIntervalMs?: number;

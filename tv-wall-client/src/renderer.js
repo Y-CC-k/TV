@@ -497,7 +497,7 @@
   }
 
   /* 分頁標題預設值（公告機未設定時使用） */
-  const DEFAULT_TAB_NAMES = { tv: "精彩槺榔", books: "好書介紹", campus: "校園風雲", health: "衛教宣導", counseling: "輔導室公告", campusHonor: "校園榮譽榜" };
+  const DEFAULT_TAB_NAMES = { tv: "精彩槺榔", books: "好書介紹", campus: "學務活動", health: "衛教宣導", counseling: "輔導室公告", campusHonor: "校園榮譽榜" };
   let currentTabNames = { ...DEFAULT_TAB_NAMES };
 
   /** 依分頁標題更新：顯示分頁勾選名稱、資料傳輸類型分類名稱、上傳區塊標題 */

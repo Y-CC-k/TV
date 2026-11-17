@@ -21,7 +21,7 @@ interface AppConfig {
   imageIntervalMs: number;
   /** 好書介紹每頁停留毫秒 */
   bookIntervalMs: number;
-  /** 校園風雲每頁停留毫秒 */
+  /** 學務活動每頁停留毫秒 */
   campusIntervalMs?: number;
   /** 衛教宣導每頁停留毫秒 */
   healthIntervalMs?: number;
@@ -49,7 +49,7 @@ interface TabVisibility {
   tv?: boolean;
   /** 好書介紹（預設 true） */
   books?: boolean;
-  /** 校園風雲（預設 true） */
+  /** 學務活動（預設 true） */
   campus?: boolean;
   /** 衛教宣導（預設 true） */
   health?: boolean;
@@ -65,7 +65,7 @@ interface TabNames {
   tv?: string;
   /** 好書介紹（預設「好書介紹」） */
   books?: string;
-  /** 校園風雲（預設「校園風雲」） */
+  /** 學務活動（預設「學務活動」） */
   campus?: string;
   /** 衛教宣導（預設「衛教宣導」） */
   health?: string;
@@ -81,7 +81,7 @@ interface ScanResult {
   images: MediaItem[];
   /** 好書介紹圖片（books 資料夾） */
   books: MediaItem[];
-  /** 校園風雲圖片（campus 資料夾） */
+  /** 學務活動圖片（campus 資料夾） */
   campus: MediaItem[];
   /** 衛教宣導圖片（health 資料夾） */
   health: MediaItem[];

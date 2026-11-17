@@ -1,13 +1,14 @@
 node_modules/
 dist/
 *.log
+*.bak
 release/
 server.json
 sync-meta.json
 shot.png
 server-media/
 
-# °õ¦æ´Á²£¥Íªº°£¿ù¡þª¬ºAÀÉ¡]¥i¯à§tª÷Æ_¡A¤£¥i´£¥æ¡^
+# ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Íªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Aï¿½É¡]ï¿½iï¿½ï¿½tï¿½ï¿½ï¿½_ï¿½Aï¿½ï¿½ï¿½iï¿½ï¿½ï¿½ï¿½^
 tvwall-config-debug.json
 tvwall-config-debug.log
 state.json

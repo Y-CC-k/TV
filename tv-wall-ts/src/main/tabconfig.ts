@@ -5,7 +5,7 @@
  * 都必須用同一套規則，否則遠端改完設定後，畫面上顯示的名稱／分頁可能和設定檔不一致。
  */
 
-/** 六個分頁的鍵（順序固定：電視牆、好書介紹、校園風雲、衛教宣導、輔導室公告、校園榮譽榜） */
+/** 六個分頁的鍵（順序固定：電視牆、好書介紹、學務活動、衛教宣導、輔導室公告、校園榮譽榜） */
 export const TAB_KEYS = [
   "tv",
   "books",
@@ -30,7 +30,7 @@ export const TAB_NAME_MAX_LENGTH = 20;
 export const DEFAULT_TAB_NAMES: Record<TabKey, string> = {
   tv: "精彩槺榔",
   books: "好書介紹",
-  campus: "校園風雲",
+  campus: "學務活動",
   health: "衛教宣導",
   counseling: "輔導室公告",
   campusHonor: "校園榮譽榜",

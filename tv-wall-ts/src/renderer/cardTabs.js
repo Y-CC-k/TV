@@ -13,7 +13,7 @@
 
   var CARD_TAB_DEFS = [
     { key: "books",       icon: "📚", name: "好書介紹",   intervalKey: "bookIntervalMs" },
-    { key: "campus",      icon: "📰", name: "校園風雲",   intervalKey: "campusIntervalMs" },
+    { key: "campus",      icon: "📰", name: "學務活動",   intervalKey: "campusIntervalMs" },
     { key: "health",      icon: "🏥", name: "衛教宣導",   intervalKey: "healthIntervalMs" },
     { key: "counseling",  icon: "🧠", name: "輔導室公告", intervalKey: "counselingIntervalMs" },
     { key: "campusHonor", icon: "🏆", name: "校園榮譽榜", intervalKey: "campusHonorIntervalMs" }
