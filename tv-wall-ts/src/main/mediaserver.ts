@@ -238,11 +238,22 @@ export function startMediaServer(o: MediaServerOptions): void {
 
       /* ---------- 上傳檔案（支援單一或多個） ---------- */
       if (pathname === "/upload" && req.method === "POST") {
-        const form = formidable({ multiples: true, keepExtensions: true });
+        const form = formidable({
+          multiples: true,
+          keepExtensions: true,
+          maxFileSize: 2 * 1024 * 1024 * 1024, // 2GB，預設 200MB 太小會擋大影片
+        });
         form.parse(req, async (err: any, fields: any, files: any) => {
           if (err) {
+            const msg = err.message || String(err);
+            /* formidable 檔案過大時回傳錯誤訊息含 "exceeds" */
+            if (/exceeds|too large|file size/i.test(msg)) {
+              console.warn("[server] 上傳檔案過大：", msg);
+              sendText(res, 413, "Request Entity Too Large：單一檔案上限 2GB");
+              return;
+            }
             console.error("[server] 上傳解析失敗：", err);
-            sendText(res, 500, "上傳解析失敗：" + err.message);
+            sendText(res, 500, "上傳解析失敗：" + msg);
             return;
           }
 
@@ -429,7 +440,7 @@ export function startMediaServer(o: MediaServerOptions): void {
           o.counselingDir ? listFiles(o.counselingDir, IMAGE_EXTS) : Promise.resolve([]),
           o.campusHonorDir ? listFiles(o.campusHonorDir, IMAGE_EXTS) : Promise.resolve([]),
         ]);
-        sendText(res, 200, `電視牆伺服器：${v.length} 個影片、${i.length} 張圖片、${b.length} 本好書介紹、${c.length} 則校園風雲、${h.length} 則衛教宣導、${co.length} 則輔導室公告、${ch.length} 則校園榮譽榜\n影片資料夾：${o.videoDir}\n圖片資料夾：${o.imagesDir}\n好書介紹資料夾：${o.booksDir ?? "（未設定）"}\n校園風雲資料夾：${o.campusDir ?? "（未設定）"}\n衛教宣導資料夾：${o.healthDir ?? "（未設定）"}\n輔導室公告資料夾：${o.counselingDir ?? "（未設定）"}\n校園榮譽榜資料夾：${o.campusHonorDir ?? "（未設定）"}\n\nGET /files        列出所有可播放檔案（上傳工具介面用，只讀 stat，速度最快）\nGET /manifest     含 SHA-256 的完整清單\nGET /files/...    下載檔案\nPOST /upload      上傳檔案（multipart/form-data，欄位 file + type=video|image|book|campus|health|counseling|campusHonor）\nDELETE /files/:type/:name  刪除檔案\nGET /config       讀取分頁顯示設定\nPOST /config      更新分頁顯示設定（JSON：{ "tabs": { "tv": true, "books": true, "campus": true, "health": true, "counseling": true, "campusHonor": true }, "tabNames": { "tv": "精彩槺榔", "books": "好書介紹", "campus": "校園風雲", "health": "衛教宣導" } }）\n`);
+        sendText(res, 200, `電視牆伺服器：${v.length} 個影片、${i.length} 張圖片、${b.length} 本好書介紹、${c.length} 則校園風雲、${h.length} 則衛教宣導、${co.length} 則輔導室公告、${ch.length} 則校園榮譽榜\n影片資料夾：${o.videoDir}\n圖片資料夾：${o.imagesDir}\n好書介紹資料夾：${o.booksDir ?? "（未設定）"}\n校園風雲資料夾：${o.campusDir ?? "（未設定）"}\n衛教宣導資料夾：${o.healthDir ?? "（未設定）"}\n輔導室公告資料夾：${o.counselingDir ?? "（未設定）"}\n校園榮譽榜資料夾：${o.campusHonorDir ?? "（未設定）"}\n\nGET /files        列出所有可播放檔案（上傳工具介面用，只讀 stat，速度最快）\nGET /manifest     含 SHA-256 的完整清單\nGET /files/...    下載檔案\nPOST /upload      上傳檔案（multipart/form-data，欄位 file + type=video|image|book|campus|health|counseling|campusHonor，單一檔案上限 2GB）\nDELETE /files/:type/:name  刪除檔案\nGET /config       讀取分頁顯示設定\nPOST /config      更新分頁顯示設定（JSON：{ "tabs": { "tv": true, "books": true, "campus": true, "health": true, "counseling": true, "campusHonor": true }, "tabNames": { "tv": "精彩槺榔", "books": "好書介紹", "campus": "校園風雲", "health": "衛教宣導" } }）\n`);
         return;
       }
 

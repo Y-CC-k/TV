@@ -734,10 +734,13 @@
       const res = await fetch(`${baseUrl}/upload`, {
         method: "POST",
         body: formData,
-        signal: AbortSignal.timeout(300000),
+        signal: AbortSignal.timeout(3600000), // 1 小時，大影片上傳不會輕易中斷
       });
       if (!res.ok) {
         const errText = await res.text().catch(() => "");
+        if (res.status === 413) {
+          throw new Error("檔案過大：伺服器單一檔案上限 2GB，請壓縮或分割後再上傳");
+        }
         throw new Error("HTTP " + res.status + (errText ? ": " + errText.slice(0, 200) : ""));
       }
       const result = await res.json();
