@@ -99,6 +99,8 @@
   /** 跑馬燈動畫控制（用 JS 實現「從螢幕最右開始、无缝循環」） */
   let marqueeRaf: number | null = null;
   let currentMarqueeText: string = "歡迎光臨 電視牆公告機";
+  let currentMarqueeColor: string = "";
+  let currentMarqueeFontSize: number = 0;
   function startMarqueeAnimation(): void {
     if (marqueeRaf !== null) cancelAnimationFrame(marqueeRaf);
     const container = document.getElementById("marqueeBar");
@@ -109,6 +111,8 @@
     const probe = document.createElement("span");
     probe.className = "marquee-text";
     probe.textContent = currentMarqueeText;
+    if (currentMarqueeColor) probe.style.color = currentMarqueeColor;
+    if (currentMarqueeFontSize > 0) probe.style.fontSize = currentMarqueeFontSize + "px";
     probe.style.visibility = "hidden";
     probe.style.position = "absolute";
     document.body.appendChild(probe);
@@ -122,6 +126,8 @@
       const span = document.createElement("span");
       span.className = "marquee-text";
       span.textContent = currentMarqueeText;
+      if (currentMarqueeColor) span.style.color = currentMarqueeColor;
+      if (currentMarqueeFontSize > 0) span.style.fontSize = currentMarqueeFontSize + "px";
       track.appendChild(span);
     }
     let position = containerWidth; // 從螢幕最右開始
@@ -143,20 +149,8 @@
   function applyMarqueeText(text?: string, color?: string, fontSize?: number): void {
     const s = typeof text === "string" ? text.trim() : "";
     currentMarqueeText = s || "歡迎光臨 電視牆公告機";
-    // 套用顏色與字體大小（空白＝使用預設）
-    const bar = document.getElementById("marqueeBar");
-    if (bar) {
-      if (color) bar.style.color = color;
-      else bar.style.removeProperty("color");
-      const spans = bar.querySelectorAll(".marquee-text");
-      spans.forEach((sp) => {
-        const el = sp as HTMLElement;
-        if (fontSize && fontSize > 0) el.style.fontSize = fontSize + "px";
-        else el.style.removeProperty("fontSize");
-        if (color) el.style.color = color;
-        else el.style.removeProperty("color");
-      });
-    }
+    currentMarqueeColor = color || "";
+    currentMarqueeFontSize = fontSize || 0;
     // 延後到下一個 frame 確保排版完成再啟動動畫
     requestAnimationFrame(() => {
       startMarqueeAnimation();
