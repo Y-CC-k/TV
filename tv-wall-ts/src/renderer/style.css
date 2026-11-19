@@ -240,7 +240,7 @@ body {
 /* ===== 跑馬燈（所有分頁共用，固定於底部） ===== */
 .marquee-bar {
   flex: 0 0 auto;
-  height: 40px;
+  height: 48px;
   background: #0b0f18;
   border-top: 1px solid rgba(255, 255, 255, 0.18);
   overflow: hidden;
@@ -258,10 +258,10 @@ body {
 
 .marquee-text {
   color: #f2f6ff;
-  font-size: 18px;
+  font-size: 24px;
   font-weight: 700;
   letter-spacing: 2px;
   padding: 0 60px;
-  line-height: 40px;
+  line-height: 48px;
   text-shadow: 0 0 8px rgba(116, 185, 255, 0.6);
 }

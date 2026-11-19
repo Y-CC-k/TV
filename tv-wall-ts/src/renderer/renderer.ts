@@ -140,9 +140,23 @@
   }
 
   /** 套用跑馬燈文字（空白＝預設文字） */
-  function applyMarqueeText(text?: string): void {
+  function applyMarqueeText(text?: string, color?: string, fontSize?: number): void {
     const s = typeof text === "string" ? text.trim() : "";
     currentMarqueeText = s || "歡迎光臨 電視牆公告機";
+    // 套用顏色與字體大小（空白＝使用預設）
+    const bar = document.getElementById("marqueeBar");
+    if (bar) {
+      if (color) bar.style.color = color;
+      else bar.style.removeProperty("color");
+      const spans = bar.querySelectorAll(".marquee-text");
+      spans.forEach((sp) => {
+        const el = sp as HTMLElement;
+        if (fontSize && fontSize > 0) el.style.fontSize = fontSize + "px";
+        else el.style.removeProperty("fontSize");
+        if (color) el.style.color = color;
+        else el.style.removeProperty("color");
+      });
+    }
     // 延後到下一個 frame 確保排版完成再啟動動畫
     requestAnimationFrame(() => {
       startMarqueeAnimation();
@@ -454,7 +468,11 @@
     /* 套用分頁標題（config.json 的 tabNames 區塊） */
     applyTabNames((cfg as Partial<AppConfig> & { tabNames?: TabNames }).tabNames);
     /* 套用跑馬燈文字（config.json 的 marqueeText 欄位） */
-    applyMarqueeText((cfg as Partial<AppConfig> & { marqueeText?: string }).marqueeText);
+    applyMarqueeText(
+      (cfg as Partial<AppConfig> & { marqueeText?: string }).marqueeText,
+      (cfg as Partial<AppConfig> & { marqueeColor?: string }).marqueeColor,
+      (cfg as Partial<AppConfig> & { marqueeFontSize?: number }).marqueeFontSize
+    );
     updateLayout();
 
     /* 預設分頁：只選目前允許顯示的分頁 */
@@ -471,7 +489,11 @@
       const nt = (ncfg as Partial<AppConfig> & { tabs?: TabVisibility }).tabs;
       applyTabs(nt);
       applyTabNames((ncfg as Partial<AppConfig> & { tabNames?: TabNames }).tabNames);
-      applyMarqueeText((ncfg as Partial<AppConfig> & { marqueeText?: string }).marqueeText);
+      applyMarqueeText(
+        (ncfg as Partial<AppConfig> & { marqueeText?: string }).marqueeText,
+        (ncfg as Partial<AppConfig> & { marqueeColor?: string }).marqueeColor,
+        (ncfg as Partial<AppConfig> & { marqueeFontSize?: number }).marqueeFontSize
+      );
     });
 
     /* tv-wall-client 上傳完成（/upload）時自動重掃（不用按 r） */

@@ -378,7 +378,7 @@ export function startMediaServer(o: MediaServerOptions): void {
         }
         try {
           const raw = JSON.parse(fs.readFileSync(o.configPath, "utf8").replace(/^\uFEFF/, ""));
-          sendJson(res, { ok: true, tabs: normalizeTabs(raw.tabs), tabNames: normalizeTabNames(raw.tabNames), marqueeText: typeof raw.marqueeText === "string" ? raw.marqueeText.trim() : undefined });
+          sendJson(res, { ok: true, tabs: normalizeTabs(raw.tabs), tabNames: normalizeTabNames(raw.tabNames), marqueeText: typeof raw.marqueeText === "string" ? raw.marqueeText.trim() : undefined, marqueeColor: typeof raw.marqueeColor === "string" ? raw.marqueeColor.trim() : undefined, marqueeFontSize: typeof raw.marqueeFontSize === "number" && raw.marqueeFontSize > 0 ? raw.marqueeFontSize : undefined });
         } catch (e) {
           sendText(res, 500, "讀取 config.json 失敗：" + (e instanceof Error ? e.message : String(e)));
         }
@@ -399,7 +399,7 @@ export function startMediaServer(o: MediaServerOptions): void {
         });
         req.on("end", () => {
           try {
-            let body: { tabs?: unknown; tabNames?: unknown; marqueeText?: unknown } = {};
+            let body: { tabs?: unknown; tabNames?: unknown; marqueeText?: unknown; marqueeColor?: unknown; marqueeFontSize?: unknown } = {};
             try {
               body = JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}");
             } catch {
@@ -409,6 +409,8 @@ export function startMediaServer(o: MediaServerOptions): void {
             const tabs = normalizeTabs(body.tabs);
             const tabNames = normalizeTabNames(body.tabNames);
             const marqueeText = (typeof body.marqueeText === "string") ? body.marqueeText.trim().slice(0, 200) : undefined;
+            const marqueeColor = (typeof body.marqueeColor === "string") ? body.marqueeColor.trim() : undefined;
+            const marqueeFontSize = (typeof body.marqueeFontSize === "number" && body.marqueeFontSize > 0) ? body.marqueeFontSize : undefined;
             let cfg: Record<string, unknown> = {};
             try {
               cfg = JSON.parse(fs.readFileSync(o.configPath as string, "utf8").replace(/^\uFEFF/, "")) || {};
@@ -425,9 +427,17 @@ export function startMediaServer(o: MediaServerOptions): void {
               if (marqueeText) cfg.marqueeText = marqueeText;
               else delete cfg.marqueeText;
             }
+            if (typeof body.marqueeColor !== "undefined") {
+              if (marqueeColor) cfg.marqueeColor = marqueeColor;
+              else delete cfg.marqueeColor;
+            }
+            if (typeof body.marqueeFontSize !== "undefined") {
+              if (marqueeFontSize) cfg.marqueeFontSize = marqueeFontSize;
+              else delete cfg.marqueeFontSize;
+            }
             fs.writeFileSync(o.configPath as string, JSON.stringify(cfg, null, 2) + "\n", "utf8");
-            console.log(`[server] tabDisplay update: ${JSON.stringify(tabs)} tabNames=${JSON.stringify(tabNames)} marqueeText=${JSON.stringify(marqueeText)}`);
-            sendJson(res, { ok: true, tabs, tabNames, marqueeText });
+            console.log(`[server] tabDisplay update: ${JSON.stringify(tabs)} tabNames=${JSON.stringify(tabNames)} marqueeText=${JSON.stringify(marqueeText)} marqueeColor=${JSON.stringify(marqueeColor)} marqueeFontSize=${marqueeFontSize}`);
+            sendJson(res, { ok: true, tabs, tabNames, marqueeText, marqueeColor, marqueeFontSize });
           } catch (e) {
             sendText(res, 500, "寫入 config.json 失敗：" + (e instanceof Error ? e.message : String(e)));
           }

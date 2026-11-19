@@ -78,6 +78,8 @@
   const tabNameCounseling = $("tabNameCounseling");
   const tabNameCampusHonor = $("tabNameCampusHonor");
   const marqueeTextInput = $("marqueeTextInput");
+  const marqueeColorSelect = $("marqueeColorSelect");
+  const marqueeFontSizeSelect = $("marqueeFontSizeSelect");
   /* 顯示分頁勾選與類型分類的名稱（隨分頁標題變動） */
   const tabLabelTv = $("tabLabelTv");
   const tabLabelBooks = $("tabLabelBooks");
@@ -550,6 +552,9 @@
       tabNameCampusHonor.value = tn.campusHonor || "";
       /* 跑馬燈文字：有設定就填入，沒設定留空（placeholder 顯示預設值） */
       marqueeTextInput.value = (data && typeof data.marqueeText === "string") ? data.marqueeText : "";
+      /* 跑馬燈顏色與字體大小 */
+      marqueeColorSelect.value = (data && typeof data.marqueeColor === "string") ? data.marqueeColor : "";
+      marqueeFontSizeSelect.value = (data && typeof data.marqueeFontSize === "number") ? String(data.marqueeFontSize) : "";
       /* 顯示分頁與類型分類的名稱跟著公告機的標題變動 */
       applyTabNamesToUi(tn);
       tabApplyStatus("已讀取", false);
@@ -589,7 +594,7 @@
       const res = await fetch(`${t.base}/config`, {
         method: "POST",
         headers: { "Content-Type": "text/plain" },
-        body: JSON.stringify({ tabs, tabNames, marqueeText: marqueeTextInput.value.trim().slice(0, 200) }),
+        body: JSON.stringify({ tabs, tabNames, marqueeText: marqueeTextInput.value.trim().slice(0, 200), marqueeColor: marqueeColorSelect.value, marqueeFontSize: marqueeFontSizeSelect.value ? Number(marqueeFontSizeSelect.value) : null }),
         signal: AbortSignal.timeout(5000),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

@@ -97,6 +97,10 @@ interface FileConfig {
   tabNames?: { tv?: string; books?: string; campus?: string; health?: string; counseling?: string; campusHonor?: string };
   /** 跑馬燈文字（空白＝使用預設文字） */
   marqueeText?: string;
+  /** 跑馬燈文字顏色（CSS 色碼，空白＝使用預設白色） */
+  marqueeColor?: string;
+  /** 跑馬燈文字大小（px，空白＝使用預設 24px） */
+  marqueeFontSize?: number;
 }
 
 /** 解析後的設定（含實際使用的資料夾路徑） */
@@ -197,6 +201,8 @@ function resolveConfig(): ResolvedConfig {
     defaultTab: "tv",
     tabs: normalizeTabs(raw.tabs),
     marqueeText: typeof raw.marqueeText === "string" ? raw.marqueeText.trim() || undefined : undefined,
+    marqueeColor: typeof raw.marqueeColor === "string" ? raw.marqueeColor.trim() || undefined : undefined,
+    marqueeFontSize: typeof raw.marqueeFontSize === "number" && raw.marqueeFontSize > 0 ? raw.marqueeFontSize : undefined,
   };
 }
 
@@ -227,6 +233,8 @@ function publicConfig(c: ResolvedConfig): AppConfig {
     tabNames: c.tabNames,
     localIP: localIPv4s()[0] ?? "",
     marqueeText: c.marqueeText,
+    marqueeColor: c.marqueeColor,
+    marqueeFontSize: c.marqueeFontSize,
   };
 }
 
@@ -438,6 +446,8 @@ if (!gotLock) {
                 tabs: normalizeTabs(raw.tabs),
                 tabNames: resolveTabNames(raw.tabNames),
                 marqueeText: typeof raw.marqueeText === "string" ? raw.marqueeText.trim() : undefined,
+                marqueeColor: typeof raw.marqueeColor === "string" ? raw.marqueeColor.trim() : undefined,
+                marqueeFontSize: typeof raw.marqueeFontSize === "number" && raw.marqueeFontSize > 0 ? raw.marqueeFontSize : undefined,
                 defaultTab: "tv",
               });
             } catch {

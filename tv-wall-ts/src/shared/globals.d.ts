@@ -43,6 +43,10 @@ interface AppConfig {
   localIP?: string;
   /** 跑馬燈文字（空白＝使用預設「歡迎光臨 電視牆公告機」） */
   marqueeText?: string;
+  /** 跑馬燈文字顏色（CSS 色碼，空白＝使用預設白色） */
+  marqueeColor?: string;
+  /** 跑馬燈文字大小（px，空白＝使用預設 24px） */
+  marqueeFontSize?: number;
 }
 
 /** 分頁顯示控制（config.json 的 tabs 區塊） */
