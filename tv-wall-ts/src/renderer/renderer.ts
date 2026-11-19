@@ -25,9 +25,6 @@
   const tabBar = $("tabBar");
   const tabTv = $("tabTv");
   const tabNameTv = $("tabNameTv");
-  const marqueeTextEl = $("marqueeText");
-  const marqueeTextDup = document.querySelector(".marquee-text-dup") as HTMLElement | null;
-  // 確保跑馬燈條位於所有分頁之後（固定於底部），不隨分頁切換消失
   // 將跑馬燈條移至 body 最後，確保位於所有分頁下方、切換分頁時仍固定顯示
   document.body.appendChild($("marqueeBar"));
   const tvPage = $("tvPage");
@@ -99,22 +96,57 @@
     for (const t of cardTabs) t.setName(pick(n[t.key], DEFAULT_TAB_NAMES[t.key]));
   }
 
-  /** 套用跑馬燈文字（空白＝預設文字）；同步更新複製份以實現無縫循環 */
+  /** 跑馬燈動畫控制（用 JS 實現「從螢幕最右開始、无缝循環」） */
+  let marqueeRaf: number | null = null;
+  let currentMarqueeText: string = "歡迎光臨 電視牆公告機";
+  function startMarqueeAnimation(): void {
+    if (marqueeRaf !== null) cancelAnimationFrame(marqueeRaf);
+    const container = document.getElementById("marqueeBar");
+    const track = container ? (container.querySelector(".marquee-track") as HTMLElement | null) : null;
+    if (!track || !container) return;
+    const speed = 80; // px/s
+    // 以單一文字 span 測量寬度
+    const probe = document.createElement("span");
+    probe.className = "marquee-text";
+    probe.textContent = currentMarqueeText;
+    probe.style.visibility = "hidden";
+    probe.style.position = "absolute";
+    document.body.appendChild(probe);
+    const singleWidth = probe.offsetWidth || 200;
+    document.body.removeChild(probe);
+    const containerWidth = container.offsetWidth || 800;
+    // 重複文字直到總寬度超過容器 + 一個文字寬
+    const copies = Math.max(2, Math.ceil((containerWidth + singleWidth) / singleWidth) + 1);
+    track.innerHTML = "";
+    for (let i = 0; i < copies; i++) {
+      const span = document.createElement("span");
+      span.className = "marquee-text";
+      span.textContent = currentMarqueeText;
+      track.appendChild(span);
+    }
+    let position = containerWidth; // 從螢幕最右開始
+    let lastTime = performance.now();
+    function animate(now: number) {
+      const dt = (now - lastTime) / 1000;
+      lastTime = now;
+      position -= speed * dt;
+      if (position <= -singleWidth) {
+        position += singleWidth;
+      }
+      track!.style.transform = "translateX(" + position + "px)";
+      marqueeRaf = requestAnimationFrame(animate);
+    }
+    marqueeRaf = requestAnimationFrame(animate);
+  }
+
+  /** 套用跑馬燈文字（空白＝預設文字） */
   function applyMarqueeText(text?: string): void {
     const s = typeof text === "string" ? text.trim() : "";
-    const val = s || "歡迎光臨 電視牆公告機";
-    marqueeTextEl.textContent = val;
-    if (marqueeTextDup) marqueeTextDup.textContent = val;
-    // 依文字長度調整捲動速度（約 80px/s，最短 8 秒避免過快）；延後到下一個 frame 確保排版完成
-    const track = marqueeTextEl.parentElement as HTMLElement | null;
-    if (track) {
-      requestAnimationFrame(() => {
-        const width = marqueeTextEl.offsetWidth || 200;
-        // 從 +100%（最右）移動到 -50%（一個文字寬度），距離 = 1.5 個 track 寬 = 3 個文字寬
-        const duration = Math.max(8, (width * 3) / 80);
-        track.style.animationDuration = duration + "s";
-      });
-    }
+    currentMarqueeText = s || "歡迎光臨 電視牆公告機";
+    // 延後到下一個 frame 確保排版完成再啟動動畫
+    requestAnimationFrame(() => {
+      startMarqueeAnimation();
+    });
   }
 
   function stopAutoTabTimer(): void {
