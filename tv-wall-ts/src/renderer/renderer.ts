@@ -26,6 +26,10 @@
   const tabTv = $("tabTv");
   const tabNameTv = $("tabNameTv");
   const marqueeTextEl = $("marqueeText");
+  const marqueeTextDup = document.querySelector(".marquee-text-dup") as HTMLElement | null;
+  // 確保跑馬燈條位於所有分頁之後（固定於底部），不隨分頁切換消失
+  // 將跑馬燈條移至 body 最後，確保位於所有分頁下方、切換分頁時仍固定顯示
+  document.body.appendChild($("marqueeBar"));
   const tvPage = $("tvPage");
   const serverIpDisplay = $("serverIp");
 
@@ -95,10 +99,21 @@
     for (const t of cardTabs) t.setName(pick(n[t.key], DEFAULT_TAB_NAMES[t.key]));
   }
 
-  /** 套用跑馬燈文字（空白＝預設文字） */
+  /** 套用跑馬燈文字（空白＝預設文字）；同步更新複製份以實現無縫循環 */
   function applyMarqueeText(text?: string): void {
     const s = typeof text === "string" ? text.trim() : "";
-    marqueeTextEl.textContent = s || "歡迎光臨 電視牆公告機";
+    const val = s || "歡迎光臨 電視牆公告機";
+    marqueeTextEl.textContent = val;
+    if (marqueeTextDup) marqueeTextDup.textContent = val;
+    // 依文字長度調整捲動速度（約 80px/s，最短 8 秒避免過快）；延後到下一個 frame 確保排版完成
+    const track = marqueeTextEl.parentElement as HTMLElement | null;
+    if (track) {
+      requestAnimationFrame(() => {
+        const width = marqueeTextEl.offsetWidth || 200;
+        const duration = Math.max(8, (width * 2) / 80);
+        track.style.animationDuration = duration + "s";
+      });
+    }
   }
 
   function stopAutoTabTimer(): void {
