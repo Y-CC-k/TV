@@ -110,7 +110,8 @@
     if (track) {
       requestAnimationFrame(() => {
         const width = marqueeTextEl.offsetWidth || 200;
-        const duration = Math.max(8, (width * 2) / 80);
+        // 從 +100%（最右）移動到 -50%（一個文字寬度），距離 = 1.5 個 track 寬 = 3 個文字寬
+        const duration = Math.max(8, (width * 3) / 80);
         track.style.animationDuration = duration + "s";
       });
     }
