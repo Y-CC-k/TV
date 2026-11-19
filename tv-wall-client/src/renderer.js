@@ -528,6 +528,26 @@
     typeLabelCampusHonor2.textContent = currentTabNames.campusHonor;
   }
 
+  /* ---------- 跑馬燈設定本地儲存（重新開啟用戶端時不遺失） ---------- */
+  function saveMarqueeToLocal() {
+    try {
+      localStorage.setItem("tvwall_marquee_text", marqueeTextInput.value.trim());
+      localStorage.setItem("tvwall_marquee_color", marqueeColorSelect.value);
+      localStorage.setItem("tvwall_marquee_fontsize", marqueeFontSizeSelect.value);
+    } catch (e) { /* localStorage 不可用時略過 */ }
+  }
+
+  function loadMarqueeFromLocal() {
+    try {
+      const text = localStorage.getItem("tvwall_marquee_text");
+      if (text !== null) marqueeTextInput.value = text;
+      const color = localStorage.getItem("tvwall_marquee_color");
+      if (color !== null) marqueeColorSelect.value = color;
+      const fontSize = localStorage.getItem("tvwall_marquee_fontsize");
+      if (fontSize !== null) marqueeFontSizeSelect.value = fontSize;
+    } catch (e) { /* localStorage 不可用時略過 */ }
+  }
+
   async function loadTabVisibility() {
     const t = tabServerOrNull();
     if (!t) { tabApplyStatus("", false); return; }
@@ -555,6 +575,8 @@
       /* 跑馬燈顏色與字體大小 */
       marqueeColorSelect.value = (data && typeof data.marqueeColor === "string") ? data.marqueeColor : "";
       marqueeFontSizeSelect.value = (data && typeof data.marqueeFontSize === "number") ? String(data.marqueeFontSize) : "";
+      /* 從公告機讀取後，同步更新本地儲存 */
+      saveMarqueeToLocal();
       /* 顯示分頁與類型分類的名稱跟著公告機的標題變動 */
       applyTabNamesToUi(tn);
       tabApplyStatus("已讀取", false);
@@ -601,6 +623,8 @@
       const data = await res.json();
       if (data && data.ok) {
         applyTabNamesToUi(tabNames);
+        /* 套用成功後，同步更新本地儲存的跑馬燈設定 */
+        saveMarqueeToLocal();
         tabApplyStatus("已套用，公告機顯示即時更新", false);
       } else throw new Error((data && data.message) || "未知錯誤");
     } catch (err) {
@@ -975,6 +999,8 @@
     /* 啟動時先套用預設名稱（讀到公告機設定後會再更新） */
     applyTabNamesToUi({});
 
+     /* 從本地儲存還原跑馬燈設定（重新開啟用戶端時不遺失） */
+     loadMarqueeFromLocal();
     if (servers.length > 0 && !selectedServerId) {
       selectedServerId = servers[0].id;
       bookServerSelect.value = selectedServerId;
