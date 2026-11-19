@@ -95,6 +95,8 @@ interface FileConfig {
   tabs?: TabVisibility;
   /** 各分頁的顯示標題（tabNames 區塊；空白＝用預設名稱） */
   tabNames?: { tv?: string; books?: string; campus?: string; health?: string; counseling?: string; campusHonor?: string };
+  /** 跑馬燈文字（空白＝使用預設文字） */
+  marqueeText?: string;
 }
 
 /** 解析後的設定（含實際使用的資料夾路徑） */
@@ -194,6 +196,7 @@ function resolveConfig(): ResolvedConfig {
     tabNames,
     defaultTab: "tv",
     tabs: normalizeTabs(raw.tabs),
+    marqueeText: typeof raw.marqueeText === "string" ? raw.marqueeText.trim() || undefined : undefined,
   };
 }
 
@@ -223,6 +226,7 @@ function publicConfig(c: ResolvedConfig): AppConfig {
     tabs: c.tabs,
     tabNames: c.tabNames,
     localIP: localIPv4s()[0] ?? "",
+    marqueeText: c.marqueeText,
   };
 }
 
@@ -433,6 +437,7 @@ if (!gotLock) {
               win?.webContents.send("config-updated", {
                 tabs: normalizeTabs(raw.tabs),
                 tabNames: resolveTabNames(raw.tabNames),
+                marqueeText: typeof raw.marqueeText === "string" ? raw.marqueeText.trim() : undefined,
                 defaultTab: "tv",
               });
             } catch {

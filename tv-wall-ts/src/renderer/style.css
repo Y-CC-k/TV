@@ -236,3 +236,38 @@ body {
 .msg.hidden {
   display: none;
 }
+
+/* ===== 跑馬燈（所有分頁共用，固定於底部） ===== */
+.marquee-bar {
+  flex: 0 0 auto;
+  height: 40px;
+  background: #0b0f18;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  overflow: hidden;
+  position: relative;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+}
+
+.marquee-track {
+  display: inline-block;
+  white-space: nowrap;
+  animation: marquee-scroll 20s linear infinite;
+  will-change: transform;
+}
+
+.marquee-text {
+  color: #f2f6ff;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 0 60px;
+  line-height: 40px;
+  text-shadow: 0 0 8px rgba(116, 185, 255, 0.6);
+}
+
+@keyframes marquee-scroll {
+  0%   { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}

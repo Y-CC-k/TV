@@ -41,6 +41,8 @@ interface AppConfig {
   tabNames?: TabNames;
   /** 本機區網 IPv4（顯示在畫面右上角） */
   localIP?: string;
+  /** 跑馬燈文字（空白＝使用預設「歡迎光臨 電視牆公告機」） */
+  marqueeText?: string;
 }
 
 /** 分頁顯示控制（config.json 的 tabs 區塊） */

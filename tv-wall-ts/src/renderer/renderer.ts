@@ -25,6 +25,7 @@
   const tabBar = $("tabBar");
   const tabTv = $("tabTv");
   const tabNameTv = $("tabNameTv");
+  const marqueeTextEl = $("marqueeText");
   const tvPage = $("tvPage");
   const serverIpDisplay = $("serverIp");
 
@@ -92,6 +93,12 @@
     };
     tabNameTv.textContent = pick(n.tv, DEFAULT_TAB_NAMES.tv);
     for (const t of cardTabs) t.setName(pick(n[t.key], DEFAULT_TAB_NAMES[t.key]));
+  }
+
+  /** 套用跑馬燈文字（空白＝預設文字） */
+  function applyMarqueeText(text?: string): void {
+    const s = typeof text === "string" ? text.trim() : "";
+    marqueeTextEl.textContent = s || "歡迎光臨 電視牆公告機";
   }
 
   function stopAutoTabTimer(): void {
@@ -398,7 +405,8 @@
 
     /* 套用分頁標題（config.json 的 tabNames 區塊） */
     applyTabNames((cfg as Partial<AppConfig> & { tabNames?: TabNames }).tabNames);
-
+    /* 套用跑馬燈文字（config.json 的 marqueeText 欄位） */
+    applyMarqueeText((cfg as Partial<AppConfig> & { marqueeText?: string }).marqueeText);
     updateLayout();
 
     /* 預設分頁：只選目前允許顯示的分頁 */
@@ -415,6 +423,7 @@
       const nt = (ncfg as Partial<AppConfig> & { tabs?: TabVisibility }).tabs;
       applyTabs(nt);
       applyTabNames((ncfg as Partial<AppConfig> & { tabNames?: TabNames }).tabNames);
+      applyMarqueeText((ncfg as Partial<AppConfig> & { marqueeText?: string }).marqueeText);
     });
 
     /* tv-wall-client 上傳完成（/upload）時自動重掃（不用按 r） */

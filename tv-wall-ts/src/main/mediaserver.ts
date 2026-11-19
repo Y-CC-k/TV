@@ -378,7 +378,7 @@ export function startMediaServer(o: MediaServerOptions): void {
         }
         try {
           const raw = JSON.parse(fs.readFileSync(o.configPath, "utf8").replace(/^\uFEFF/, ""));
-          sendJson(res, { ok: true, tabs: normalizeTabs(raw.tabs), tabNames: normalizeTabNames(raw.tabNames) });
+          sendJson(res, { ok: true, tabs: normalizeTabs(raw.tabs), tabNames: normalizeTabNames(raw.tabNames), marqueeText: typeof raw.marqueeText === "string" ? raw.marqueeText.trim() : undefined });
         } catch (e) {
           sendText(res, 500, "讀取 config.json 失敗：" + (e instanceof Error ? e.message : String(e)));
         }
@@ -399,7 +399,7 @@ export function startMediaServer(o: MediaServerOptions): void {
         });
         req.on("end", () => {
           try {
-            let body: { tabs?: unknown; tabNames?: unknown } = {};
+            let body: { tabs?: unknown; tabNames?: unknown; marqueeText?: unknown } = {};
             try {
               body = JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}");
             } catch {
@@ -408,6 +408,7 @@ export function startMediaServer(o: MediaServerOptions): void {
             }
             const tabs = normalizeTabs(body.tabs);
             const tabNames = normalizeTabNames(body.tabNames);
+            const marqueeText = (typeof body.marqueeText === "string") ? body.marqueeText.trim().slice(0, 200) : undefined;
             let cfg: Record<string, unknown> = {};
             try {
               cfg = JSON.parse(fs.readFileSync(o.configPath as string, "utf8").replace(/^\uFEFF/, "")) || {};
@@ -420,9 +421,13 @@ export function startMediaServer(o: MediaServerOptions): void {
               if (Object.keys(tabNames).length === 0) delete cfg.tabNames;
               else cfg.tabNames = tabNames;
             }
+            if (typeof body.marqueeText !== "undefined") {
+              if (marqueeText) cfg.marqueeText = marqueeText;
+              else delete cfg.marqueeText;
+            }
             fs.writeFileSync(o.configPath as string, JSON.stringify(cfg, null, 2) + "\n", "utf8");
-            console.log(`[server] tabDisplay update: ${JSON.stringify(tabs)} tabNames=${JSON.stringify(tabNames)}`);
-            sendJson(res, { ok: true, tabs, tabNames });
+            console.log(`[server] tabDisplay update: ${JSON.stringify(tabs)} tabNames=${JSON.stringify(tabNames)} marqueeText=${JSON.stringify(marqueeText)}`);
+            sendJson(res, { ok: true, tabs, tabNames, marqueeText });
           } catch (e) {
             sendText(res, 500, "寫入 config.json 失敗：" + (e instanceof Error ? e.message : String(e)));
           }
