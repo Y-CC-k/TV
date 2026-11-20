@@ -422,6 +422,10 @@ if (!gotLock) {
           /* 上傳完成 → 立刻重掃資料夾，不需要按 r */
           if (win && !win.isDestroyed()) win.webContents.send("synced");
         },
+        onDeleted: () => {
+          /* 刪除檔案 → 立刻重掃資料夾，避免播放器仍引用已刪除的檔案 */
+          if (win && !win.isDestroyed()) win.webContents.send("synced");
+        },
       });
     }
 

@@ -33,6 +33,8 @@ export interface MediaServerOptions {
   configPath?: string;
   /** 上傳完成後的回調（由主程序傳入，用於通知 renderer 重新掃描） */
   onUploaded?: () => void;
+  /** 刪除檔案後的回調（由主程序傳入，用於通知 renderer 重新掃描） */
+  onDeleted?: () => void;
 }
 
 /* 分頁顯示設定（tabs／tabNames）的正規化集中在 tabconfig.ts，與主程序共用同一套規則 */
@@ -514,6 +516,7 @@ export function startMediaServer(o: MediaServerOptions): void {
             await fsp.rm(abs, { force: true });
             HASH_CACHE.delete(abs);
             sendText(res, 200, "Deleted");
+            o.onDeleted?.();
           } catch (delErr) {
             sendText(res, 500, "刪除失敗：" + (delErr instanceof Error ? delErr.message : String(delErr)));
           }
